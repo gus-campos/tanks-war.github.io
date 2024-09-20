@@ -3,8 +3,8 @@
 
 <head>
     <title>Tanks War</title>
-    <link rel="shortcut icon" href="tank.ico">
-    <link rel="stylesheet" href="../html/resources/default.css">
+    <link rel="shortcut icon" href="assets/icons/tank.js">
+    <link rel="stylesheet" href="style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">  
 
     <!-- Buttons stylesheet with main definitions, position colors etc-->
@@ -20,7 +20,7 @@
 
   <!-- BOTÕES
   -->
-  <button style="bottom:40px; right: 50px;" id="A" class="video-game-button">Shot</button>
+  <button style="bottom:40px; right: 50px;" id="A" class="video-game-button">Atira</button>
   <button style="top:10px; right: 60px; width: 1emp; line-height: 1.4em; font-size: 10pt; background-color: #cccccc; background-image:none"
           id="som" class="video-game-button">som</button>       
   <button style="top:10px; right: 10px; width: 1emp; line-height: 1.4em; font-size: 10pt; background-color: #cccccc; background-image:none"
@@ -32,6 +32,10 @@
     {"imports": {"three": "../build/three.module.js"}} 
   </script> 
   
+  <section id="loading-screen">
+    <div id="loader"></div> 
+  </section>
+
   <div id="webgl-output">      
     <script id="main" data-mobile="false" type="module" src="main.js"></script>
   </div>

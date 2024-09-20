@@ -65,6 +65,9 @@ class PowerUp {
       let parent = new THREE.Mesh()
       position.y = powerUpHeight;
       parent.position.copy(position);
+
+      // Projeção de sombra
+      obj.castShadow = true;
       
       parent.add(obj)
       scene.add(parent);
@@ -82,6 +85,9 @@ class PowerUp {
       // Ajustando rotação
       position.y = powerUpHeight;
       obj.position.copy(position);
+
+      // Projeção de sombra
+      obj.castShadow = true;
     
       scene.add(obj);
       return obj;
@@ -103,8 +109,7 @@ class PowerUp {
       if (this.active) { 
 
         this.get(player);
-        this.active = false;
-        scene.remove(this.object)
+        this.destroy();
       }
     }
 
@@ -121,6 +126,11 @@ class PowerUp {
       this.boostDamage(player);
   }
 
+  destroy() {
+    this.active = false;
+    scene.remove(this.object)
+  }
+
   boostDamage(player) {
     player.damageBoosted = true;
   }
@@ -134,7 +144,11 @@ export class Level {
 
   constructor(levelIndex, matrix, handMatrix) {
 
-    this.powerUp = new PowerUp(PowerUpTypes.DamageBoost, new THREE.Vector3(-28,0,12));
+    // Inicializando primeiro power up
+    this.powerUp = new PowerUp(PowerUpTypes.DamageBoost, new THREE.Vector3(0,0,0));
+    this.powerUp.timer = -1;
+    this.powerUp.type = Math.random() > 0.5;
+    this.powerUp.destroy();
 
     // Informações do nível
     this.levelIndex = levelIndex;
@@ -330,14 +344,39 @@ export class Level {
     scene.add(spotLight);
   }
 
-  static createBasicLights(ambIntensity, dirInensity) {
+  static createBasicLights(ambIntensity, dirIntensity) {
 
     // Luz ambiente
     let ambientLight = new THREE.AmbientLight("white", ambIntensity);
     scene.add(ambientLight);
 
     // Luz direcional
-    let dirLight = new THREE.DirectionalLight("white", dirInensity);
+    let dirLight = new THREE.DirectionalLight("white", dirIntensity);
+
+      // Posição da luz direcional. Por padrão aponta pra origem
+      dirLight.position.copy(new THREE.Vector3(-100,200,-100));
+
+      // Configuração de iluminação do spotlight
+      dirLight.intensity = dirIntensity;
+
+      // Sombra
+      dirLight.castShadow = true;
+
+      // Tronco
+      dirLight.shadow.camera.near = 200;
+      dirLight.shadow.camera.far = 300;
+      dirLight.shadow.camera.left = -100;
+      dirLight.shadow.camera.right = 100;
+      dirLight.shadow.camera.top = 100;
+      dirLight.shadow.camera.bottom = -100;
+
+      // Mapa
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+
+      // Ajuste do raio, de forma que a sombra fique suave e definida ao mesmo tempo
+      dirLight.shadow.radius = 1.8;
+
     scene.add(dirLight);
   }
 

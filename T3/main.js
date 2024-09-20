@@ -3,6 +3,7 @@ import { OrbitControls } from "../build/jsm/controls/OrbitControls.js";
 import KeyboardState from "../libs/util/KeyboardState.js";
 import { initCamera, onWindowResize, onOrientationChange } from "../libs/util/util.js";
 import { Buttons } from "../libs/other/buttons.js";
+import {ColladaLoader} from '../build/jsm/loaders/ColladaLoader.js';
 
 // Importações do projeto
 import { Level } from "./level.js";
@@ -22,7 +23,8 @@ import { levelMatrixes,
 } from './game_data.js';
 
 // Constantes
-const minDist = 30;
+const minDist = 40;
+const maxZoomDelta = 38;
 const aproxScale = 1.5;
 const cameraAxe = new THREE.Vector3(0, 1, 1)
 export const blockSize = 4;
@@ -106,7 +108,7 @@ class TouchControls {
 
 // ============================================================================
 
-function updateCamera(zoomLevel) {
+function updateCamera(zoomMultiplier) {
 
   /* 
   // ----- Este trecho encontra o centro de massa dos tanques -----
@@ -135,10 +137,10 @@ function updateCamera(zoomLevel) {
   let heightDistScaler = 1*window.innerHeight/1080;
 
   // Aplicando zoom
-  let zoomMultiplier = 1/zoomLevel;
+  //zoomMultiplier = 1/zoomMultiplier;
 
   // Escala total de distância
-  let totalDistScale = minDist*zoomMultiplier+aproxScale*widthDistScaler*heightDistScaler;
+  let totalDistScale = minDist+zoomMultiplier+aproxScale*widthDistScaler*heightDistScaler;
 
   // Definir que câmera olhará pro centro de massa dos tanques
   camera.lookAt(playerPosition);
@@ -155,7 +157,7 @@ function reset(levelIndex) {
   bullets = [];
   tanks = [];
   cannon = null;
-  zoom = 5;
+  zoom = 0;
 
   // Skybox
   scene.background = new THREE.CubeTextureLoader().load(urls);
@@ -220,6 +222,14 @@ function reset(levelIndex) {
   updateCamera(tanks);
 }
 
+// ============================================================================
+
+// Loading screen
+// Ver exemplo com calma
+// Evitar criar do zero
+
+// ============================================================================
+
 // Variáveis gerais
 export let scene, renderer, camera, material, light, orbit, mobileMode;
 scene = new THREE.Scene();                                   
@@ -248,8 +258,7 @@ prefixes.forEach(prefix => {
 })
 
 // Zoom
-let zoom;
-const zoomLevels = [1/6, 1/5, 1/4, 1/3, 1/2, 1, 2, 3, 4, 5, 6];
+let zoom, scroll = 0;
 
 // ============================================================================
 
@@ -268,6 +277,11 @@ if (!mobileMode) touchControls.deleteUI();
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
 window.addEventListener( 'orientationchange', onOrientationChange );
+
+// Atualizando scroll do mouse
+document.addEventListener( 'wheel', (event) => {
+  scroll = event.deltaY;
+});
 
 // Iniciando renderização
 render();
@@ -337,16 +351,17 @@ function render() {
   // Controla o toggle do orbit controller
   if (keyboard.down("O")) orbit.enabled = !orbit.enabled;
 
-  // Incrementa e decrementa nível de zoom
-  if (keyboard.down("[")) zoom -= 1;
-  else if (keyboard.down("]")) zoom += 1;
-
-  // Valida zoom
-  zoom = (zoom < 0) ? 0 : zoom;
-  zoom = (zoom > zoomLevels.length-1) ? zoomLevels.length-1 : zoom;  
+  // Altera o zoom de acordo com o scroll, e valida
+  if (!orbit.enabled) {
+    zoom += scroll/50;
+    zoom = (zoom < -maxZoomDelta) ? -maxZoomDelta : zoom;
+    zoom = (zoom > 1.5*maxZoomDelta) ? 1.5*maxZoomDelta : zoom;  
+    // Força default do scroll
+    scroll = 0;
+  }
 
   // Atualiza câmera (de acordo com o zoom), se orbit controller estiver desligado
-  if (!orbit.enabled) updateCamera(zoomLevels[zoom]);
+  if (!orbit.enabled) updateCamera(zoom);
   
   // Renderizando
   requestAnimationFrame(render);

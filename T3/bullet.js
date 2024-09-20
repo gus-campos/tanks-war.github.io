@@ -33,7 +33,7 @@ export class Bullet {
 
   createGeometry(shooter) {
 
-    let color = this.damageBoosted ? "red" : "white";
+    let color = this.damageBoosted ? "red" : "orange";
 
     let material = new THREE.MeshLambertMaterial({ color: color, side: THREE.DoubleSide });
 

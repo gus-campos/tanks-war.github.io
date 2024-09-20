@@ -32,10 +32,9 @@ export class Cannon {
     // Material
     let material = new THREE.MeshPhongMaterial();
       
-    material.color.set("rgb(105,105,105)");
-    material.side = THREE.DoubleSide;
-    material.specular.set("gray");
-    material.castShadow = true;
+      material.color.set("rgb(105,105,105)");
+      material.side = THREE.DoubleSide;
+      material.specular.set("gray");
 
     // ========================== Holder ==================================
 
@@ -207,6 +206,9 @@ export class Cannon {
 
     // Iniciar virado para "baixo"
     cannon.rotation.y = -Math.PI/2
+
+    // Projeção de sombra
+    cannon.castShadow = true;
     
     // Adicionando canhão à cena
     scene.add(cannon); 
