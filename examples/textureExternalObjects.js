@@ -136,14 +136,7 @@ function loadGLBFile(modelPath, modelName, desiredScale, angle, visibility)
 }
 
 // Normalize scale and multiple by the newScale
-function normalizeAndRescale(obj, newScale)
-{
-  var scale = getMaxSize(obj); // Available in 'utils.js'
-  obj.scale.set(newScale * (1.0/scale),
-                newScale * (1.0/scale),
-                newScale * (1.0/scale));
-  return obj;
-}
+c
 
 function fixPosition(obj)
 {
