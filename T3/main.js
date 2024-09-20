@@ -261,7 +261,7 @@ const zoomLevels = [1/6, 1/5, 1/4, 1/3, 1/2, 1, 2, 3, 4, 5, 6];
 reset(1);
 
 // Joystick
-mobileMode = false;
+mobileMode = true;
 touchControls = new TouchControls();
 if (!mobileMode) touchControls.deleteUI();
 
