@@ -60,6 +60,8 @@ class TouchControls {
     this.shootPressed = false;
     this.shootPressedLastFrame = false;
     this.shootDown = false;
+
+    this.muteTimer = 0;
     
     // Listerners
     function onButtonDown(event) {
@@ -70,8 +72,10 @@ class TouchControls {
           touchControls.shootPressed = true;
           break;
         case "som":
-          console.log(audio.mute)
-          audio.mute = !audio.mute;
+          if (touchControls.muteTimer < 0) {
+            audio.mute = !audio.mute;
+            touchControls.muteTimer = 0.25;
+          }
           break;    
         case "full":
           touchControls.buttons.setFullScreen();
@@ -93,6 +97,9 @@ class TouchControls {
 
     this.shootDown = (!this.shootPressedLastFrame && this.shootPressed)
     this.shootPressedLastFrame = this.shootPressed;
+
+    // Decrementando timer do mute
+    this.muteTimer -= clockDelta;
   }
 
   deleteUI() {
@@ -166,12 +173,11 @@ class LoadingScreen {
       // (Re)começar jogo
       reset(1);
 
-      // Se mobile, full screen
-      
-
-      // Render só da primeira vez
+      // Só da primeira vez
       if (loadingScreen.start) { 
+        // Se mobile, full screen
         if (mobileMode) touchControls.buttons.setFullScreen();  
+        // Render 
         render();
         loadingScreen.start = false;
       }
