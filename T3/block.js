@@ -4,8 +4,6 @@ import * as THREE from "../build/three.module.js";
 import { scene, blockSize, clockDelta } from "./main.js"
 import { signedAngle } from "./extra_lib.js"
 
-const blockSpeed = 4;
-
 export class Block {
 
   constructor(level, position, texture) {
@@ -19,6 +17,7 @@ export class Block {
     this.movable = false;
     this.movingDirection = null;
     this.cumulativeDelta = 0;
+    this.speed = 5;
   }
 
   // ====================================
@@ -28,15 +27,19 @@ export class Block {
     if (this.movable) {
 
       let newPosition = this.object.position.clone()
-            
-      let delta = blockSpeed * clockDelta;
+      
+      // Deslocamento
+      let delta = this.speed * clockDelta;
+      this.cumulativeDelta += Math.abs(delta);
+
+      // Delocando
       this.object.position.copy(newPosition.add(this.movingDirection.clone().multiplyScalar(delta)))
       this.collider = new THREE.Box3().setFromObject(this.object);
       
-      this.cumulativeDelta += Math.abs(delta);
+      // Invertendo direção
       if (this.cumulativeDelta >= 4 * blockSize) {
         this.cumulativeDelta = 0;
-        this.movingDirection.multiplyScalar(-1);
+        this.movingDirection.z *= -1;
       }
     }
   }

@@ -5,16 +5,17 @@ import { scene,
          level, 
          bullets, 
          tanks, 
-         clockDelta, 
-         player, 
          mobileMode,
          touchControls,
-         audio
+         audio,
+         clockDelta
 } from "./main.js"
+
+import { tankAI } from './tank_ai.js'
 
 import { Bullet } from "./bullet.js";
 import { Bar } from "./gui.js"
-import { loadModel, signedAngle, angleBetweenObjects } from "./extra_lib.js"
+import { loadModel, signedAngle } from "./extra_lib.js"
 
 // Constantes
 const tankModel = await loadModel("assets/geometries/toon_tank.glb", 1.2)
@@ -22,20 +23,14 @@ const shooterOffset = 2.3;
 const blockSize = 4;
 const regularSpeed = 0.3;
 const regularRotatingSpeed = 0.08;
-
 const shootAvalabilityCriteria = 1;
-
 const angleCriteria = 45/180*Math.PI;
-const nestDistanceCriteria = 3;
-const fleeCriteria = 15;
-const unjamTime = 0.3;
-const hiddenTime = 4; 
 
 const modesDuration = { "follow": 2, "retreat": 3, "camp": 5 }
 
 export class Tank {
 
-  constructor(position, rotationAngle, colors, name, controls) {
+  constructor(position, rotationAngle, colors, name) {
 
     // Propriedades gerais
     this.life = 10;
@@ -48,7 +43,6 @@ export class Tank {
     
     // Propriedades contantes
     this.name = name;
-    this.controls = controls;
     this.mainColor = colors["Tank_Root"];
 
     // Propriedades da IA
@@ -56,6 +50,7 @@ export class Tank {
     this.standardAImode = "nest";
     this.timer = 0;
     this.lastPosition = new THREE.Vector3(0,0,0);
+    this.lastPosition2 = new THREE.Vector3(0,0,0);
     this.moved = true;
     this.nest = level.getNest(this.name);
     this.cumulativeDamage = 0;
@@ -73,6 +68,11 @@ export class Tank {
     
     // Inicializando colisor que será atualizado por outro método
     this.collider = new THREE.Box3();
+  }
+
+  tankAI() {
+
+    tankAI(this);
   }
 
   createGeometry(position, rotationAngle, colors) {
@@ -140,13 +140,13 @@ export class Tank {
     let keyboardControls = () => {
 
       // Rotação
-      if (keyboard.pressed(this.controls["left"]))   this.rotate(true);
-      if (keyboard.pressed(this.controls["right"]))  this.rotate(false);
+      if (keyboard.pressed("A"))    this.rotate(true);
+      if (keyboard.pressed("D"))    this.rotate(false);
       // Translação
-      if (keyboard.pressed(this.controls["up"]))     this.move(true);
-      if (keyboard.pressed(this.controls["down"]))   this.move(false);
+      if (keyboard.pressed("W"))    this.move(true);
+      if (keyboard.pressed("S"))    this.move(false);
       // Tiro 
-      if (keyboard.down(this.controls["shot"]))      this.shoot();
+      if (keyboard.down("space"))   this.shoot();
 
     }
 
@@ -199,247 +199,6 @@ export class Tank {
     this.moved = this.lastPosition.distanceTo(this.object.position) > 0;
     // Salvando última posição do tanque
     this.lastPosition = this.object.position.clone();
-  }
-
-  tankAI() {
-
-    // Encontrando parceiro //////////////// SÓ falta encontrar parceiro e criarmodo help
-    if (!this.partner)
-      tanks.forEach(tank => {
-        if (tank.name != "P" && tank.name != this.name)
-          this.partner = tank;
-      });
-
-    // =========================== AUXILIAR ========================================
-    
-    // Incrementando timer
-    this.timer += clockDelta;
-
-    // Direção do tanque 
-    let shooterPosition = new THREE.Vector3();
-    this.shooter.getWorldPosition(shooterPosition);
-    shooterPosition.y=0;
-    let tankDir = this.object.position.clone().sub(shooterPosition);
-
-    // Encontrando ângulo entre este tanque e o tanque do player
-    let angle = angleBetweenObjects(this.shooter, this.object, player.object)
-    
-    // Checando por colisões com blocos
-    let collindingBlocks = [];
-    level.blocks.forEach(block => {
-      if (this.collider.intersectsBox(block.collider))
-        collindingBlocks.push(block);
-    });
-
-    // Checando por colisões com tanques
-    let collindingTank = null;
-    tanks.forEach(tank => {
-      if (tank.name != this.name && this.collider.intersectsBox(tank.collider))
-        collindingTank = tank;
-    });
-
-    // =================== CONTROLE DE MODOS =====================================
-
-    // -------------- MODOS QUE SOBRESCREVEM --------------
-
-    // Se este for A, colidindo com B, entrar em unjam
-    if (collindingTank && this.name == "A" && collindingTank.name == "B") {
-      this.timer = 0;
-      this.AImode = "unjam";
-    }
-
-    // Se tanque aproximar muito, flee
-    else if (this.object.position.distanceTo(player.object.position) < fleeCriteria) {
-      this.cumulativeDamage = 0;
-      this.AImode = "flee";
-    }
-
-    // Se estiver fugindo mas estiver levendo dano, voltar a atirar
-    else if (this.AImode == "flee" && this.cumulativeDamage >= 2) {
-      this.cumulativeDamage = 0;
-      this.AImode = "despair";
-    }
-    
-    // -------------- SAÍDAS DE SOBRESCRITAS --------------
-
-    // Voltar pro padrão se unjam esgotar
-    else if (this.AImode == "unjam" && this.timer > unjamTime) {
-      this.AImode = this.standardAImode;
-    }
-    
-    // Sair do despair e levar mais 2 danos, seguir pro retreat 
-    else if (this.AImode == "despair" && this.cumulativeDamage >= 2) {
-      this.standardAImode = "retreat"
-      this.AImode = this.standardAImode;
-    }
-
-    // -------------- MODOS NORMAIS --------------
-    
-    // Se chegar no nest, passar pro camp
-    else if (this.AImode == "nest" && this.object.position.distanceTo(this.nest) < nestDistanceCriteria) {
-      this.standardAImode = "camp";
-      this.cumulativeDamage = 0;
-    }
-
-    // Se levar 2 danos ou mais, no camping, recuar
-    else if (this.AImode == "camp" && this.cumulativeDamage >= 2) {
-      this.standardAImode = "retreat"
-    }
-
-    // Se recuando já chegou na base, ficar de camping 
-    else if (this.AImode == "retreat" && this.object.position.distanceTo(this.spawnLocation) < nestDistanceCriteria) {
-      this.timer = 0;
-      this.standardAImode = "hidden";
-    }
-
-    else if (this.AImode == "hidden" && this.timer > hiddenTime) {
-      this.standardAImode = "nest";
-    }
-    
-    // -------------- SOBRESCRITA --------------
-    
-    // Se for um dos modos de sobrescrita, ignorar modo padrão
-    this.AImode = (["unjam", "flee", "despair"].indexOf(this.AImode) == -1) ? this.standardAImode : this.AImode;
-
-    // ======================== TIRO ==============================================
-
-    // Atualizando contagem de tempo
-    this.timeSinceLastShot += clockDelta;
-
-    // Na cadência adequada, atirar
-    if(this.timeSinceLastShot > shootAvalabilityCriteria) {
-        this.shoot();
-        this.timeSinceLastShot = 0;
-    }
-
-    // ======================= EXECUÇÃO DOS MODOS ================================
-
-    if (this.AImode == "nest") {
-
-      // Ângulo com o ninho 
-      let angle = signedAngle(tankDir, this.object.position.clone().sub(this.nest));
-
-      // Rotacionando pro ninho
-      if (angle > 0) this.rotate(true, angle);
-      else this.rotate(false, angle);
-
-      this.move()
-    }  
-
-    else if (this.AImode == "retreat") {
-
-      // COLIDINDO COM PAREDE VÁLIDA
-      if (collindingBlocks.length > 0 && collindingBlocks[0].hand) {
-
-        // Se estiver movendo, usar primeiro bloco
-        // Se não, escolher aleatoriamente, até começar a mover
-        let collindingBlock;
-        if (this.moved)
-          collindingBlock = collindingBlocks[0];
-        else 
-        collindingBlock = collindingBlocks[1];
-
-        // Direção do bloco
-        let blockDir = collindingBlock.dirVec(this.object.position);
-        
-        // Ângulo entre tanque e bloco
-        let angle = signedAngle(tankDir, blockDir);
-
-        // Se a fuga da parede é pela direita ou pela esquerda
-        let handMultiplier = collindingBlock.hand == "R" ? 1  : -1;
-        
-        // Se descendo ou subindo o nível
-        let wayMultiplier = (tankDir.x > 0) ? 1 : -1;   
-
-        // Ângulo alvo: quase 90º da parede, raspando levemente
-        let targetAngle = angle - (wayMultiplier * handMultiplier * Math.PI/2) - (0.1/180*Math.PI);
-
-        // Ângulo é exagerado para que o smooth da rotação seja menor
-        if (targetAngle > 0) this.rotate(true, targetAngle);
-        else this.rotate(false, targetAngle);
-        this.move(true, true);
-
-      }
-
-      else {
- 
-        // Ângulo com o ninho 
-        let angle = signedAngle(tankDir, this.object.position.clone().sub(this.spawnLocation));
-        
-        // Rotacionando pro ninho
-        if (angle > 0) this.rotate(true, angle);
-        else this.rotate(false, angle);
-        
-        this.move()
-      }
-    }  
-
-    // Em tais modos, ficar mirando
-    else if (this.AImode == "camp" || this.AImode == "despair" || this.AImode == "hidden") {
-
-      if (angle > 0) this.rotate(true, angle);
-      else this.rotate(false, angle);
-    }
-
-    else if (this.AImode == "unjam") {
-
-      // Rotacionando
-      if (angle > 0) this.rotate(true, angle);
-      else this.rotate(false, angle);
-
-      // Dando ré, rápido
-      this.move(false, false)
-    }
-
-    else if (this.AImode == "flee"  || this.AImode == "help") {
-
-      // COLIDINDO COM PAREDE VÁLIDA
-      if (collindingBlocks.length > 0 && collindingBlocks[0].hand) {
-
-        // Se estiver movendo, usar primeiro bloco
-        // Se não, escolher aleatoriamente, até começar a mover
-        let collindingBlock;
-
-        collindingBlock = collindingBlocks[0];
-        
-        if (!this.moved && collindingBlocks[1] && collindingBlocks[1].hand)
-          collindingBlock = collindingBlocks[1];
-
-        // Direção do bloco
-        let blockDir = collindingBlock.dirVec(this.object.position);
-        
-        // Ângulo entre tanque e bloco
-        let angle = signedAngle(tankDir, blockDir);
-
-        // Se a fuga da parede é pela direita ou pela esquerda
-        let handMultiplier = collindingBlock.hand == "R" ? 1  : -1;
-        
-        // Se descendo ou subindo o nível
-        let wayMultiplier = (tankDir.x > 0) ? 1 : -1;   
-
-        // Ângulo alvo: quase 90º da parede, raspando levemente
-        let targetAngle = angle - (wayMultiplier * handMultiplier * Math.PI/2) - (0.1/180*Math.PI);
-
-        // Ângulo é exagerado para que o smooth da rotação seja menor
-        if (targetAngle > 0) this.rotate(true, targetAngle);
-        else this.rotate(false, targetAngle);
-        this.move(true, true);
-
-      }
-
-      // NÃO COLIDINDO
-      else {
-
-        angle = -angle
-
-        // Rotacionando
-        if (angle > 0) this.rotate(true, angle);
-        else this.rotate(false, angle);
-
-        // Seguir em frente
-        this.move(true, true)
-      }
-    }
   }
 
   shoot() {
@@ -519,6 +278,9 @@ export class Tank {
         scene.remove(bullet.object);
       }
     })
+
+    // Atualizando última posição
+    this.lastPosition2 = this.object.position.clone();
   } 
 
   updateCollisions() {
@@ -527,8 +289,35 @@ export class Tank {
     level.blocks.forEach(block => {
       if (this.collider.intersectsBox(block.collider)) {
 
-        let dir = block.dir(this.object.position);
+        // Se for bloco móvel
+        if (block.movable) {
 
+          // Se for direções horizontais, e tiver de frente pro bloco
+          let dir = block.dir(this.object.position)
+          if (dir == "L" || dir == "R") {
+
+            // Se tiver de frente pro bloco
+            let tankZ = this.object.position.z;
+            let blockZ = block.object.position.z;
+            if (tankZ < (blockZ + blockSize/2) && tankZ > (blockZ - blockSize/2)) {
+
+              // Se não estiver no meio do bloco (preso ou lateral)
+              let tankX = this.object.position.x;
+              let blockX = block.object.position.x;
+              if (Math.abs(tankX - blockX) > blockSize/2) {
+
+                // Congelando posições
+                this.object.position.copy(this.lastPosition2);
+                // Exceto na direção z, que acompanhará o z do bloco
+                this.object.position.z +=  block.speed * block.movingDirection.z * clockDelta;
+              }
+            }
+          }
+        }
+
+        let dir = block.dir(this.object.position);
+        
+        // ====================== Limitando movimento em direção ao bloco ======================
         if ((dir == "L") && (this.object.position.x - block.object.position.x < blockSize/2))
           this.object.position.x = block.object.position.x - blockSize;
 
@@ -540,6 +329,10 @@ export class Tank {
 
         if ((dir == "D") && (this.object.position.z - block.object.position.z > blockSize/2)) 
             this.object.position.z = block.object.position.z + blockSize;
+
+        // ====================== Arrastando tanque ====================== 
+
+        
       }
     });
   }

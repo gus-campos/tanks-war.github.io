@@ -15,7 +15,6 @@ import { levelMatrixes,
   handMatrixes, 
   lightsIntensities,
   colors, 
-  controls, 
   initialRotationAngles 
 } from './game_data.js';
 
@@ -333,8 +332,7 @@ function reset(levelIndex) {
   // Criando tanques, de acordo com spawns e adicionando ao array
   Object.keys(spawns).forEach(key => {  
     tanks.push(
-      new Tank(spawns[key], initialRotationAngles[levelIndex][key],
-               colors[key], key, controls[key])
+      new Tank(spawns[key], initialRotationAngles[levelIndex][key], colors[key], key)
     );
   });
 
@@ -400,7 +398,9 @@ let loadingScreen = new LoadingScreen();
 
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
-window.addEventListener( 'orientationchange', onOrientationChange );
+//if (mobileMode) screen.orientation.lock('landscape');
+//window.addEventListener( 'orientationchange', onOrientationChange );
+//window.screen.orientation 
 
 // Atualizando scroll do mouse
 document.addEventListener( 'wheel', (event) => {

@@ -401,7 +401,7 @@ export class Level {
     /*
     Retorna a posição do ninho de tiro do tanque correspondente
     */
-
+   
     // Encontrar marcadores de spawn
     for (var i=0; i<this.dimensions[0]; i++) 
       for (var j=0; j<this.dimensions[1]; j++) 
