@@ -185,8 +185,6 @@ class LoadingScreen {
   }
 }
 
-// ============================================================================
-
 class Audio {
   constructor() {
 
@@ -198,10 +196,12 @@ class Audio {
 
       "shot" : 'assets/audio/pewPew.wav',
       "bonk" : 'assets/audio/boom.mp3',
-      "ost"  : 'assets/audio/astronaut.wav'
+      "ost"  : 'assets/audio/astronaut.wav',
+      "gate" : 'assets/audio/gate.mp3'
     } 
 
     this.ostAudio = new THREE.Audio(this.listener);
+    this.gate = new THREE.Audio(this.listener);
 
     this.audioLoader.load(this.sounds["ost"], function(buffer) {
       audio.ostAudio.setBuffer(buffer);
@@ -360,6 +360,10 @@ function reset(levelIndex) {
   // Iniciando com orbit desligado e atualizando a câmera
   orbit.enabled = false;
   updateCamera(tanks);
+
+  // Tocando som do portão
+  if (levelIndex != 1)
+    audio.playSound("gate", 0.5);
 }
 
 // ============================================================================

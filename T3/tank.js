@@ -26,7 +26,7 @@ const regularRotatingSpeed = 0.08;
 const shootAvalabilityCriteria = 1;
 const angleCriteria = 45/180*Math.PI;
 
-const modesDuration = { "follow": 2, "retreat": 3, "camp": 5 }
+const timeCriteria = 5;
 
 export class Tank {
 
@@ -47,7 +47,6 @@ export class Tank {
 
     // Propriedades da IA
     this.AImode = "nest";
-    this.standardAImode = "nest";
     this.timer = 0;
     this.lastPosition = new THREE.Vector3(0,0,0);
     this.lastPosition2 = new THREE.Vector3(0,0,0);
@@ -58,7 +57,7 @@ export class Tank {
     this.partner = null;
 
     // Iniciando com timer aleatório, no range do follow
-    this.timer = Math.random() * modesDuration["follow"];
+    this.timer = timeCriteria;
 
     // Criando barra após definição da cor principal
     this.bar = new Bar(this);
@@ -291,7 +290,7 @@ export class Tank {
       if (this.collider.intersectsBox(block.collider)) {
 
         // Se for bloco móvel
-        if (block.movable) {
+        if (this.name == "P" && block.movable) {
 
           // Se for direções horizontais, e tiver de frente pro bloco
           let dir = block.dir(this.object.position)
@@ -331,9 +330,6 @@ export class Tank {
         if ((dir == "D") && (this.object.position.z - block.object.position.z > blockSize/2)) 
             this.object.position.z = block.object.position.z + blockSize + 0.01;
 
-        // ====================== Arrastando tanque ====================== 
-
-        
       }
     });
   }

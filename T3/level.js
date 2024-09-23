@@ -22,7 +22,8 @@ const wallTextures = [
 
   textureLoader.load("assets/textures/crates_of_future/ab_crate_a.png"),
   textureLoader.load("assets/textures/crates_of_future/ab_crate_b.png"),
-  textureLoader.load("assets/textures/crates_of_future/ab_crate_d.png")
+  textureLoader.load("assets/textures/crates_of_future/ab_crate_d.png"),
+  textureLoader.load("assets/textures/city/Tileable1b.png")
 ];
 
 const floorTextures = [
@@ -214,8 +215,7 @@ export class Level {
         // Para cada item da matriz que representa um bloco
         if (["U","D","L","R","H","*", "K", "k", "Z", "Y", "W"].indexOf(this.matrix[i][j]) != -1) {
 
-          let block = new Block(this, Level.blockPosition(this, i, j),
-                                wallTextures[this.levelIndex-1]);
+          let block = new Block(this, Level.blockPosition(this, i, j), wallTextures[this.levelIndex-1]);
 
           block.type = this.matrix[i][j];
 
@@ -224,7 +224,8 @@ export class Level {
           // Se é móvel (se tem valor M ou Y)
           if (this.matrix[i][j] == "Z" || this.matrix[i][j] == "Y" || this.matrix[i][j] == "W") {
             
-
+            // Modificando textura
+            block.object.material.map = wallTextures[3];
 
             block.movable = true;
             block.speed = blocksSpeed[block.type];
@@ -409,12 +410,19 @@ export class Level {
     /*
     Retorna a posição do ninho de tiro do tanque correspondente
     */
+
+    let nests = [];
    
     // Encontrar marcadores de spawn
     for (var i=0; i<this.dimensions[0]; i++) 
       for (var j=0; j<this.dimensions[1]; j++) 
         if (this.matrix[i][j] == tankName.toLowerCase())
-          return Level.blockPosition(this, i, j);
+          nests.push(Level.blockPosition(this, i, j));
+
+    if (nests.length == 0)
+      return null;
+    else
+      return nests[Math.floor(Math.random()*2)];
   }
 
   updatePowerUp(player) {
