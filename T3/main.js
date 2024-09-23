@@ -1,7 +1,7 @@
 import * as THREE from "../build/three.module.js";
 import { OrbitControls } from "../build/jsm/controls/OrbitControls.js";
 import KeyboardState from "../libs/util/KeyboardState.js";
-import { initCamera, onWindowResize, onOrientationChange } from "../libs/util/util.js";
+import { initCamera, onWindowResize } from "../libs/util/util.js";
 import { Buttons } from "../libs/other/buttons.js";
 
 // Importações do projeto
@@ -194,7 +194,7 @@ class Audio {
     this.audioLoader.load(this.sounds["ost"], function(buffer) {
       audio.ostAudio.setBuffer(buffer);
       audio.ostAudio.setLoop(true);
-      audio.ostAudio.setVolume(2);
+      audio.ostAudio.setVolume(3);
       audio.ostAudio.play();
     });
   }
@@ -277,8 +277,11 @@ function reset(levelIndex) {
   // Tirar pause
   loadingScreen.pause = false;
 
-  // Resetando
-  keyboard = new KeyboardState();
+  // Resetando teclado
+  KeyboardState.status = {}
+  
+  
+  // Resetando variáveis
   clock = new THREE.Clock();
   scene = new THREE.Scene();
   bullets = [];
@@ -392,6 +395,7 @@ let zoom, scroll = 0;
 mobileMode = document.getElementById("main").getAttribute("data-mobile") == "true";
 touchControls = new TouchControls();
 if (!mobileMode) touchControls.deleteUI();
+keyboard = new KeyboardState();
 
 // Tela de carregamento
 let loadingScreen = new LoadingScreen();

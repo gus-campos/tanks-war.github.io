@@ -81,7 +81,7 @@ export class Block {
 
     // Se for de reflexão múltipla, calcular ângulo usando a referência, 
     // para descobrir em qual do cubo está sendo tocada
-    else if (this.type == "*" || this.type == "k" || this.type == "K" || this.type == "Z" || this.type == "Y") {
+    else if (this.type == "*" || this.type == "k" || this.type == "K" || this.type == "Z" || this.type == "Y" || this.type == "W") {
 
       // Se for bloco de canhão, considerar o bloco central como referência, do contrário, usar o próprio bloco
       let centralBlock = (this.type == "k" || this.type == "K") ? this.parent : this;

@@ -140,11 +140,11 @@ export class Tank {
     let keyboardControls = () => {
 
       // Rotação
-      if (keyboard.pressed("A"))    this.rotate(true);
-      if (keyboard.pressed("D"))    this.rotate(false);
       // Translação
-      if (keyboard.pressed("W"))    this.move(true);
-      if (keyboard.pressed("S"))    this.move(false);
+      if ((keyboard.pressed("A") || keyboard.pressed("left")))  this.rotate(true);
+      if ((keyboard.pressed("D") || keyboard.pressed("right"))) this.rotate(false);
+      if ((keyboard.pressed("W") || keyboard.pressed("up")))    this.move(true);
+      if ((keyboard.pressed("S") || keyboard.pressed("down")))  this.move(false);
       // Tiro 
       if (keyboard.down("space"))   this.shoot();
 
@@ -287,6 +287,7 @@ export class Tank {
     
     // Para cada bloco com o qual houve interseção
     level.blocks.forEach(block => {
+      
       if (this.collider.intersectsBox(block.collider)) {
 
         // Se for bloco móvel
@@ -319,16 +320,16 @@ export class Tank {
         
         // ====================== Limitando movimento em direção ao bloco ======================
         if ((dir == "L") && (this.object.position.x - block.object.position.x < blockSize/2))
-          this.object.position.x = block.object.position.x - blockSize;
+          this.object.position.x = block.object.position.x - blockSize - 0.01;
 
         if ((dir == "R") && (this.object.position.x - block.object.position.x > blockSize/2))
-          this.object.position.x = block.object.position.x + blockSize;
+          this.object.position.x = block.object.position.x + blockSize + 0.01;
 
         if ((dir == "U") && (this.object.position.z - block.object.position.z < blockSize/2))
-          this.object.position.z = block.object.position.z - blockSize;
+          this.object.position.z = block.object.position.z - blockSize - 0.01;
 
         if ((dir == "D") && (this.object.position.z - block.object.position.z > blockSize/2)) 
-            this.object.position.z = block.object.position.z + blockSize;
+            this.object.position.z = block.object.position.z + blockSize + 0.01;
 
         // ====================== Arrastando tanque ====================== 
 

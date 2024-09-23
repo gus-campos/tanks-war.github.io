@@ -8,6 +8,13 @@ import { Block } from "./block.js"
 // Constantes
 const lampPostModel = await loadModel("assets/geometries/lamp_post.glb", 2.5);
 
+const blocksSpeed = {
+
+  "W" : 5,
+  "Y" : 4,
+  "Z" : 3
+}
+
 // TEXTURAS
 let textureLoader = new THREE.TextureLoader();
 
@@ -205,9 +212,7 @@ export class Level {
       for (var j=0; j<this.dimensions[1]; j++) {
 
         // Para cada item da matriz que representa um bloco
-        if (["U","D","L","R","H","*", "K", "k", "Z", "Y"].indexOf(this.matrix[i][j]) != -1) {
-
-          
+        if (["U","D","L","R","H","*", "K", "k", "Z", "Y", "W"].indexOf(this.matrix[i][j]) != -1) {
 
           let block = new Block(this, Level.blockPosition(this, i, j),
                                 wallTextures[this.levelIndex-1]);
@@ -217,10 +222,13 @@ export class Level {
           block.hand = (this.handMatrix[i][j] == "X") ? null : this.handMatrix[i][j];
           
           // Se é móvel (se tem valor M ou Y)
-          if (this.matrix[i][j] == "Z" || this.matrix[i][j] == "Y") {
+          if (this.matrix[i][j] == "Z" || this.matrix[i][j] == "Y" || this.matrix[i][j] == "W") {
             
+
+
             block.movable = true;
-            block.movingDirection = new THREE.Vector3(0,0,1).multiplyScalar(block.type == "Z" ? 1 : -1);
+            block.speed = blocksSpeed[block.type];
+            block.movingDirection = new THREE.Vector3(0,0,1).multiplyScalar(block.type == "Z" || block.type == "W" ? 1 : -1);
           }
           
           // Se for bloco de canhão

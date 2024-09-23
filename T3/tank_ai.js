@@ -135,17 +135,33 @@ export function tankAI(obj) {
 
   else if (obj.AImode == "retreat") {
 
+    // Listando paredes com mão definida
+    let handedCollingBlocks = [];
+    collindingBlocks.forEach(block => {
+      if (block.hand)
+        handedCollingBlocks.push(block);
+    });
+
     // COLIDINDO COM PAREDE VÁLIDA
-    if (collindingBlocks.length > 0 && collindingBlocks[0].hand) {
+    if (handedCollingBlocks.length > 0) {
 
-      // Se estiver movendo, usar primeiro bloco
-      // Se não, escolher aleatoriamente, até começar a mover
       let collindingBlock;
-      if (obj.moved)
-        collindingBlock = collindingBlocks[0];
-      else 
-      collindingBlock = collindingBlocks[1];
 
+      // Se tiver mais de um bloco válido
+      if (handedCollingBlocks.length > 1) {
+        
+        // Se estiver movendo, usar primeiro bloco
+        // Se não, usar o segundo
+        if (obj.moved)
+          collindingBlock = collindingBlocks[0];
+        else
+          collindingBlock = collindingBlocks[1];
+      }
+      
+      else {
+        collindingBlock = handedCollingBlocks[0];
+      }
+      
       // Direção do bloco
       let blockDir = collindingBlock.dirVec(obj.object.position);
       
