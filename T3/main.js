@@ -163,13 +163,18 @@ class LoadingScreen {
       
       loadingScreen.fadeOut();
       
-      // (Re)começar jogo, inicia em fullscreen
-      touchControls.buttons.setFullScreen();
+      // (Re)começar jogo
       reset(1);
 
+      // Se mobile, full screen
+      
+
       // Render só da primeira vez
-      if (loadingScreen.start) render();
-      loadingScreen.start = false;
+      if (loadingScreen.start) { 
+        if (mobileMode) touchControls.buttons.setFullScreen();  
+        render();
+        loadingScreen.start = false;
+      }
     }
   }
 }
