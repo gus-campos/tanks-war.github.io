@@ -163,7 +163,8 @@ class LoadingScreen {
       
       loadingScreen.fadeOut();
       
-      // (Re)começar jogo
+      // (Re)começar jogo, inicia em fullscreen
+      touchControls.buttons.setFullScreen();
       reset(1);
 
       // Render só da primeira vez
