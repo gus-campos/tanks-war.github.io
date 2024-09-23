@@ -15,7 +15,7 @@ const wallTextures = [
 
   textureLoader.load("assets/textures/crates_of_future/ab_crate_a.png"),
   textureLoader.load("assets/textures/crates_of_future/ab_crate_b.png"),
-  textureLoader.load("assets/textures/crates_of_future/ab_crate_e.png")
+  textureLoader.load("assets/textures/crates_of_future/ab_crate_d.png")
 ];
 
 const floorTextures = [
@@ -161,44 +161,13 @@ export class Level {
     this.blocks = this.createBlocks();
   }
 
-  // ============ MOVER FUNÇÂO PRO FINAL
-  updatePowerUp(player) {
+  updateBlocksPosition() {
 
-    // Atualiza o power up
-    this.powerUp.update(player);
-    
-    // Se power up desativar, e esgotar o tempo
-    if (!this.powerUp.active && this.powerUp.timer < 0) {
+    this.blocks.forEach(block => {
 
-      // Listar posições válidas
-      let freeSpaces = this.validPowerUpPositions();
-      // Sortar uma posição
-      let randomIndex  = Math.floor(Math.random() * freeSpaces.length);
-      // Achar os índices
-      let freeRandomBlock = freeSpaces[randomIndex];
-      // Coordenadas
-      let freePosition = Level.blockPosition(this, freeRandomBlock[0], freeRandomBlock[1]);
-
-      // Substituir power up por um do próximo tipo
-      this.powerUp = new PowerUp((this.powerUp.type+1)%2, freePosition);
-    }
+      block.updatePosition();
+    });
   }
-
-  validPowerUpPositions() {
-
-    let positions = [];
-
-    // Para cada elemento da matrix, se não tiver nada registrado,
-    // é um espaço válido
-    for (let i=0; i<this.matrix.length; i++)
-      for (let j=0; j<this.matrix[0].length; j++)
-        if (this.matrix[i][j] == " ")
-          positions.push([i, j])
-
-    return positions;
-  }
-
-  // ====================================
 
   createPlane() {
 
@@ -236,7 +205,9 @@ export class Level {
       for (var j=0; j<this.dimensions[1]; j++) {
 
         // Para cada item da matriz que representa um bloco
-        if (["U","D","L","R","H","*", "C", "c"].indexOf(this.matrix[i][j]) != -1) {
+        if (["U","D","L","R","H","*", "K", "k", "Z", "Y"].indexOf(this.matrix[i][j]) != -1) {
+
+          
 
           let block = new Block(this, Level.blockPosition(this, i, j),
                                 wallTextures[this.levelIndex-1]);
@@ -244,16 +215,24 @@ export class Level {
           block.type = this.matrix[i][j];
 
           block.hand = (this.handMatrix[i][j] == "X") ? null : this.handMatrix[i][j];
-          blocks.push(block);
-
+          
+          // Se é móvel (se tem valor M ou Y)
+          if (this.matrix[i][j] == "Z" || this.matrix[i][j] == "Y") {
+            
+            block.movable = true;
+            block.movingDirection = new THREE.Vector3(0,0,1).multiplyScalar(block.type == "Z" ? 1 : -1);
+          }
+          
           // Se for bloco de canhão
-          if (block.type == "C" || block.type == "c") {
+          if (block.type == "K" || block.type == "k") {
             
             // Rebaixar sua posição
             block.object.position.y += cannonBlocksOffset;
             // Se for bloco central, guardar sua referência
-            if (block.type == "C") centralCannonBlock = block;
+            if (block.type == "K") centralCannonBlock = block;
           }
+
+          blocks.push(block);
         }  
       }
     }
@@ -261,7 +240,7 @@ export class Level {
     // Definindo o bloco central do canhão como pai de todod os blocos de canhão
     if (centralCannonBlock != null)
       blocks.forEach(block => {
-        if (block.type == "c" || block.type == "C")
+        if (block.type == "k" || block.type == "K")
           block.parent = centralCannonBlock;
       });
 
@@ -391,7 +370,7 @@ export class Level {
     // Encontrar marcadores de spawn
     for (var i=0; i<this.dimensions[0]; i++) 
       for (var j=0; j<this.dimensions[1]; j++) 
-        if (["P","A","B"].indexOf(this.matrix[i][j]) != -1)
+        if (["P","A","B", "C"].indexOf(this.matrix[i][j]) != -1)
       
           spawns[this.matrix[i][j]] = Level.blockPosition(this, i, j);
 
@@ -428,5 +407,41 @@ export class Level {
       for (var j=0; j<this.dimensions[1]; j++) 
         if (this.matrix[i][j] == tankName.toLowerCase())
           return Level.blockPosition(this, i, j);
+  }
+
+  updatePowerUp(player) {
+
+    // Atualiza o power up
+    this.powerUp.update(player);
+    
+    // Se power up desativar, e esgotar o tempo
+    if (!this.powerUp.active && this.powerUp.timer < 0) {
+
+      // Listar posições válidas
+      let freeSpaces = this.validPowerUpPositions();
+      // Sortar uma posição
+      let randomIndex  = Math.floor(Math.random() * freeSpaces.length);
+      // Achar os índices
+      let freeRandomBlock = freeSpaces[randomIndex];
+      // Coordenadas
+      let freePosition = Level.blockPosition(this, freeRandomBlock[0], freeRandomBlock[1]);
+
+      // Substituir power up por um do próximo tipo
+      this.powerUp = new PowerUp((this.powerUp.type+1)%2, freePosition);
+    }
+  }
+
+  validPowerUpPositions() {
+
+    let positions = [];
+
+    // Para cada elemento da matrix, se não tiver nada registrado,
+    // é um espaço válido
+    for (let i=0; i<this.matrix.length; i++)
+      for (let j=0; j<this.matrix[0].length; j++)
+        if (this.matrix[i][j] == " ")
+          positions.push([i, j])
+
+    return positions;
   }
 }

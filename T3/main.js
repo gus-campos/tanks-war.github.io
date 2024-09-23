@@ -13,8 +13,6 @@ import { Cannon } from "./cannon.js";
 // Importação de dados do jogo
 import { levelMatrixes, 
   handMatrixes, 
-  wallColors, 
-  floorColors,
   lightsIntensities,
   colors, 
   controls, 
@@ -67,7 +65,6 @@ class TouchControls {
     // Listerners
     function onButtonDown(event) {
 
-      //console.log(event.target.id)
       switch(event.target.id)
       {
         case "A":
@@ -293,10 +290,6 @@ function reset(levelIndex) {
   // Skybox
   scene.background = new THREE.CubeTextureLoader().load(urls);
 
-  // Cores dos níveis
-  let wallColor = wallColors[levelIndex];
-  let floorColor = floorColors[levelIndex];
-
   // Arranjo do nível e direções de contorno
   let levelMatrix = levelMatrixes[levelIndex];
   let handMatrix = handMatrixes[levelIndex];
@@ -305,7 +298,7 @@ function reset(levelIndex) {
   let lightsIntensity = lightsIntensities[levelIndex];
 
   // Criando nível
-  level = new Level(levelIndex, levelMatrix, handMatrix, wallColor, floorColor);
+  level = new Level(levelIndex, levelMatrix, handMatrix);
   
   // Após criação do nível, se for nível 2, criar postes de luz e canhão
   if (levelIndex == 2) {
@@ -355,12 +348,6 @@ function reset(levelIndex) {
   orbit.enabled = false;
   updateCamera(tanks);
 }
-
-// ============================================================================
-
-
-
-
 
 // ============================================================================
 
@@ -424,6 +411,9 @@ document.addEventListener( 'wheel', (event) => {
 
 function render() {
 
+  // Atualizando posição dos blocos
+  level.updateBlocksPosition();
+
   // Calcular delta time
   clockDelta = clock.getDelta()
 
@@ -443,6 +433,7 @@ function render() {
   // Seletor de nível
   if (keyboard.down("1")) reset(1);
   if (keyboard.down("2")) reset(2);
+  if (keyboard.down("3")) reset(3);
 
   // Liga e desligfa mudo
   if (keyboard.down("P")) 
@@ -483,7 +474,7 @@ function render() {
         if (tanks.length == 1 && tanks[0].name == "P") {
           
           // Indicar vitória, ou seguir pro próximo nível
-          if (level.levelIndex == 2) {
+          if (level.levelIndex == 3) {
             loadingScreen.gameOver(true);
           }
           

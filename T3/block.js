@@ -1,8 +1,10 @@
 import * as THREE from "../build/three.module.js";
 
 // Importações do projeto
-import { scene, blockSize } from "./main.js"
+import { scene, blockSize, clockDelta } from "./main.js"
 import { signedAngle } from "./extra_lib.js"
+
+const blockSpeed = 4;
 
 export class Block {
 
@@ -14,7 +16,32 @@ export class Block {
     this.type = null;
     this.parent = null;
     this.hand = null;
+    this.movable = false;
+    this.movingDirection = null;
+    this.cumulativeDelta = 0;
   }
+
+  // ====================================
+
+  updatePosition() {
+
+    if (this.movable) {
+
+      let newPosition = this.object.position.clone()
+            
+      let delta = blockSpeed * clockDelta;
+      this.object.position.copy(newPosition.add(this.movingDirection.clone().multiplyScalar(delta)))
+      this.collider = new THREE.Box3().setFromObject(this.object);
+      
+      this.cumulativeDelta += Math.abs(delta);
+      if (this.cumulativeDelta >= 4 * blockSize) {
+        this.cumulativeDelta = 0;
+        this.movingDirection.multiplyScalar(-1);
+      }
+    }
+  }
+
+  // ====================================
 
   createGeometry(position, texture) { 
 
@@ -51,10 +78,10 @@ export class Block {
 
     // Se for de reflexão múltipla, calcular ângulo usando a referência, 
     // para descobrir em qual do cubo está sendo tocada
-    else if (this.type == "*" || this.type == "c" || this.type == "C") {
+    else if (this.type == "*" || this.type == "k" || this.type == "K" || this.type == "Z" || this.type == "Y") {
 
       // Se for bloco de canhão, considerar o bloco central como referência, do contrário, usar o próprio bloco
-      let centralBlock = (this.type == "c" || this.type == "C") ? this.parent : this;
+      let centralBlock = (this.type == "k" || this.type == "K") ? this.parent : this;
 
       // Vetor horizontal e vetor bloco-tanque
       let vec1 = new THREE.Vector3(0,0,1);

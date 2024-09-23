@@ -399,10 +399,11 @@ export class Tank {
         // Se estiver movendo, usar primeiro bloco
         // Se não, escolher aleatoriamente, até começar a mover
         let collindingBlock;
-        if (this.moved)
-          collindingBlock = collindingBlocks[0];
-        else 
-        collindingBlock = collindingBlocks[1];
+
+        collindingBlock = collindingBlocks[0];
+        
+        if (!this.moved && collindingBlocks[1] && collindingBlocks[1].hand)
+          collindingBlock = collindingBlocks[1];
 
         // Direção do bloco
         let blockDir = collindingBlock.dirVec(this.object.position);
@@ -502,7 +503,7 @@ export class Tank {
       
       // Se for o player, só não toma dano de si
       if (this.name == "P") authorCondition = (bullet.author != "P");
-      else authorCondition = (bullet.author != "A" && bullet.author != "B");
+      else authorCondition = (bullet.author != "A" && bullet.author != "B" && bullet.author != "C");
 
       // Se estiver ativo, não for de própria autoria, e tiver intersectando
       if ((bullet.active) && (authorCondition) && (bullet.collider.intersectsBox(this.collider))) {
