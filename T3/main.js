@@ -432,7 +432,8 @@ if (mobileMode) {
 
 // Atualizando scroll do mouse
 document.addEventListener( 'wheel', (event) => {
-  scroll = event.deltaY;
+  if (!mobileMode)
+    scroll = event.deltaY;
 });
 
 // ============================================================================
