@@ -402,8 +402,8 @@ let loadingScreen = new LoadingScreen();
 
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
+window.addEventListener( 'orientationchange', onOrientationChange );
 //if (mobileMode) screen.orientation.lock('landscape');
-//window.addEventListener( 'orientationchange', onOrientationChange );
 //window.screen.orientation 
 
 // Atualizando scroll do mouse
