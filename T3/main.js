@@ -402,9 +402,25 @@ let loadingScreen = new LoadingScreen();
 
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
-window.addEventListener( 'orientationchange', onOrientationChange );
-//if (mobileMode) screen.orientation.lock('landscape');
-//window.screen.orientation 
+
+// ============================================================================
+
+function checkOrientation() {
+  if (window.innerWidth < window.innerHeight) {
+    // In portrait mode, show the warning overlay
+    document.getElementById('rotate-warning').classList.add('active');
+  } else {
+    // In landscape mode, hide the warning overlay
+    document.getElementById('rotate-warning').classList.remove('active');
+  }
+}
+
+// Run the check on page load and screen resize
+window.addEventListener('resize', checkOrientation);
+window.addEventListener('load', checkOrientation);
+checkOrientation();
+
+// ============================================================================
 
 // Atualizando scroll do mouse
 document.addEventListener( 'wheel', (event) => {
