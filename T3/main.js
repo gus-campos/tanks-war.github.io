@@ -3,7 +3,6 @@ import { OrbitControls } from "../build/jsm/controls/OrbitControls.js";
 import KeyboardState from "../libs/util/KeyboardState.js";
 import { initCamera, onWindowResize, onOrientationChange } from "../libs/util/util.js";
 import { Buttons } from "../libs/other/buttons.js";
-import {ColladaLoader} from '../build/jsm/loaders/ColladaLoader.js';
 
 // Importações do projeto
 import { Level } from "./level.js";
@@ -37,7 +36,6 @@ class TouchControls {
     // ============= JOYSTICK ==========================================
 
     // Posição e direção do Joystick
-    let screenRate = [0.9, 0.05] 
     this.joystickVector = new THREE.Vector2(0,0);
     
     // Atributo joystick
@@ -46,6 +44,9 @@ class TouchControls {
       mode: 'static',
       position: { bottom: "100px", left: "100px" }
     });
+
+    // Setting z-index
+    this.joystick[0].el.style.zIndex = 0;
 
     // Attactching listeners
     this.joystick.on('move', function (evt, data) {
@@ -56,22 +57,26 @@ class TouchControls {
       touchControls.joystickVector = new THREE.Vector2(0,0);
     })
 
+    
     // ============= BOTÕES ============================================
-
+    
     this.shootPressed = false;
     this.shootPressedLastFrame = false;
     this.shootDown = false;
-
+    
     // Listerners
     function onButtonDown(event) {
+
+      //console.log(event.target.id)
       switch(event.target.id)
       {
         case "A":
           touchControls.shootPressed = true;
-         break;
-        case "mute":
-          // MUTE FUNCTION
-        break;    
+          break;
+        case "som":
+          console.log(audio.mute)
+          audio.mute = !audio.mute;
+          break;    
         case "full":
           touchControls.buttons.setFullScreen();
         break;    
@@ -79,9 +84,11 @@ class TouchControls {
     }
     
     function onButtonUp(event) {
-      touchControls.shootPressed = false;
+      if (event.target.id == "A") {
+        touchControls.shootPressed = false;
+      }
     }
-
+    
     // Atributo botões
     this.buttons = new Buttons(onButtonDown, onButtonUp);
   }
@@ -103,6 +110,122 @@ class TouchControls {
 
     elements.forEach(element => {element.remove()});
 
+  }
+}
+
+class LoadingScreen {
+  constructor() {
+
+    this.start = true;
+    this.active = true;
+    this.pause = true;
+
+    this.screen = document.getElementById( 'loading-screen' );
+
+    this.button  = document.getElementById("myBtn")
+      this.button.style.backgroundColor = 'darkgreen';
+      this.button.innerHTML = 'START';
+      this.button.addEventListener("click", LoadingScreen.onButtonPressed);
+
+    this.status = document.getElementById("status");
+      this.status.innerHTML = 'TANKS WAR';
+  }
+
+  fadeOut() {
+    
+    this.active = false;
+    this.pause = false;
+
+    this.button.style.opacity = 0;
+    this.screen.transition = 0;
+    this.screen.classList.remove('fade-in');
+    this.screen.classList.add( 'fade-out' );
+  }
+
+  fadeIn() {
+
+    this.active = true;
+    this.pause = true;
+
+    this.button.style.opacity = 1;
+    this.screen.transition = 0;
+    this.screen.classList.remove('fade-out');
+    this.screen.classList.add( 'fade-in' );
+  }
+
+  gameOver(win=false) {
+
+    this.status.innerHTML = win ? 'VICTORY' : 'GAME OVER';
+    this.button.innerHTML = win ? 'START OVER' : 'RETRY';
+
+    this.fadeIn();
+  }
+
+  static onButtonPressed() {
+    
+    if (loadingScreen.active) {
+      
+      loadingScreen.fadeOut();
+      
+      // (Re)começar jogo
+      reset(1);
+
+      // Render só da primeira vez
+      if (loadingScreen.start) render();
+      loadingScreen.start = false;
+    }
+  }
+}
+
+// ============================================================================
+
+class Audio {
+  constructor() {
+
+    this.mute = false;
+    this.previousMute = false;
+    this.listener = new THREE.AudioListener();
+    this.audioLoader = new THREE.AudioLoader();
+    this.sounds = {
+
+      "shot" : 'assets/audio/pewPew.wav',
+      "bonk" : 'assets/audio/boom.mp3',
+      "ost"  : 'assets/audio/astronaut.wav'
+    } 
+
+    this.ostAudio = new THREE.Audio(this.listener);
+
+    this.audioLoader.load(this.sounds["ost"], function(buffer) {
+      audio.ostAudio.setBuffer(buffer);
+      audio.ostAudio.setLoop(true);
+      audio.ostAudio.setVolume(2);
+      audio.ostAudio.play();
+    });
+  }
+
+  playSound(soundName, volume) {
+
+    if (!this.mute) {
+
+      const sound = new THREE.Audio(this.listener);
+      this.audioLoader.load(this.sounds[soundName], function(buffer) {
+        sound.setBuffer(buffer);
+        sound.setLoop(false);
+        sound.setVolume(volume);
+        sound.play();
+      });
+    }
+  }
+
+  updateOst() {
+
+    if (this.mute)
+      audio.ostAudio.stop();
+
+    if (!this.mute && this.previousMute)
+      audio.ostAudio.play();
+
+    this.previousMute = this.mute;
   }
 }
 
@@ -149,6 +272,14 @@ function updateCamera(zoomMultiplier) {
 }
 
 function reset(levelIndex) {
+
+  // Verificando god mode anterior 
+  let godMode = false;
+  if (player)
+    godMode = player.godMode;
+
+  // Tirar pause
+  loadingScreen.pause = false;
 
   // Resetando
   keyboard = new KeyboardState();
@@ -217,6 +348,9 @@ function reset(levelIndex) {
   // Pegando referência do player
   tanks.forEach(tank => { if (tank.name == "P") player = tank; });
 
+  // Mantendo god mode após renascer
+  player.godMode = godMode;
+
   // Iniciando com orbit desligado e atualizando a câmera
   orbit.enabled = false;
   updateCamera(tanks);
@@ -224,9 +358,9 @@ function reset(levelIndex) {
 
 // ============================================================================
 
-// Loading screen
-// Ver exemplo com calma
-// Evitar criar do zero
+
+
+
 
 // ============================================================================
 
@@ -234,7 +368,7 @@ function reset(levelIndex) {
 export let scene, renderer, camera, material, light, orbit, mobileMode;
 scene = new THREE.Scene();                                   
 camera = initCamera();    
-renderer = new THREE.WebGLRenderer();                 
+renderer = new THREE.WebGLRenderer();         
 
   // Configurando renderer e mapeamento de sombras
   document.getElementById("webgl-output").appendChild(renderer.domElement);
@@ -245,7 +379,7 @@ renderer = new THREE.WebGLRenderer();
 orbit = new OrbitControls(camera, renderer.domElement);      
 
 // Variáveis do nível
-export let bullets, level, tanks, clockDelta, player, touchControls;
+export let bullets, level, tanks, clockDelta, player, touchControls, audio;
 let cannon, clock, keyboard;
 
 // Skybox urls
@@ -257,6 +391,9 @@ prefixes.forEach(prefix => {
   urls.push(root + prefix + format)
 })
 
+// Audio
+audio = new Audio();
+
 // Zoom
 let zoom, scroll = 0;
 
@@ -266,13 +403,13 @@ let zoom, scroll = 0;
 
 // ============================================================================
 
-// Iniciando jogo pelo primeiro nível
-reset(1);
-
 // Joystick
 mobileMode = document.getElementById("main").getAttribute("data-mobile") == "true";
 touchControls = new TouchControls();
 if (!mobileMode) touchControls.deleteUI();
+
+// Tela de carregamento
+let loadingScreen = new LoadingScreen();
 
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
@@ -283,23 +420,23 @@ document.addEventListener( 'wheel', (event) => {
   scroll = event.deltaY;
 });
 
-// Iniciando renderização
-render();
-
 // ============================================================================
 
 function render() {
 
   // Calcular delta time
   clockDelta = clock.getDelta()
-  
+
+  // Atualiza estado da trilha
+  audio.updateOst();
+
   // Atualizando canhão
   if (cannon != null)
     cannon.update();
   
   // Atualiza teclado
   keyboard.update();
-
+  
   // Atualiza touch
   touchControls.update();
   
@@ -307,46 +444,65 @@ function render() {
   if (keyboard.down("1")) reset(1);
   if (keyboard.down("2")) reset(2);
 
-  // Liga e desliga god mode
-  if (keyboard.down("G")) 
-    player.godMode = !player.godMode
-
-  // Atualiza os tanques
-  tanks.forEach(tank => {
-
-    // Atualiza controles
-    tank.updateActions(keyboard);
-    
-    // Atualiza colisores
-    tank.updateCollider();
-    
-    // Atualiza colisão com parede
-    tank.updateCollisions();
-    
-    // Atualiza vida
-    tank.updateLife();
-
-    // Atualiza barra
-    tank.bar.update();
-
-    if (tank.life <= 0) {
-
-      // Se player é destruído, volta do nível 1
-      if (tank.name == "P") reset(1);
-      // Se outro tanque é destruído, ele some
-      else tank.selfDestruct();
-      // Se sobrou só o player, repetir/ir para nível 2 ---> MUDAR AQUI
-      if (tanks.length == 1 && tanks[0].name == "P") reset(2);
-    }
-  });
+  // Liga e desligfa mudo
+  if (keyboard.down("P")) 
+    audio.mute = !audio.mute;
   
-  // Atualiza posições, colisores e reflexões dos tiros
-  Bullet.updatePositions();
-  Bullet.updateColliders();
-  Bullet.updateReflections();
+  if (!loadingScreen.pause) {
 
-  // Atualia animação do powerUp
-  level.updatePowerUp(player);
+    // Liga e desliga god mode
+    if (keyboard.down("G")) 
+      player.godMode = !player.godMode
+
+    // Atualiza os tanques
+    tanks.forEach(tank => {
+
+      // Atualiza controles
+      tank.updateActions(keyboard);
+      
+      // Atualiza colisores
+      tank.updateCollider();
+      
+      // Atualiza colisão com parede
+      tank.updateCollisions();
+      
+      // Atualiza vida
+      tank.updateLife();
+
+      // Atualiza barra
+      tank.bar.update();
+
+      if (tank.life <= 0) {
+
+        // Se player é destruído, volta do nível 1
+        if (tank.name == "P") loadingScreen.gameOver();
+        // Se outro tanque é destruído, ele some
+        else tank.selfDestruct();
+
+        // Se sobrou só o player, ir para nível seguinte
+        if (tanks.length == 1 && tanks[0].name == "P") {
+          
+          // Indicar vitória, ou seguir pro próximo nível
+          if (level.levelIndex == 2) {
+            loadingScreen.gameOver(true);
+          }
+          
+          else {
+            reset(level.levelIndex + 1);
+          }
+        }
+      }
+    });
+    
+    // Atualiza posições, colisores e reflexões dos tiros
+    Bullet.updatePositions();
+    Bullet.updateColliders();
+    Bullet.updateReflections();
+
+    // Atualia animação do powerUp
+    level.updatePowerUp(player);
+
+  }
 
   // Controla o toggle do orbit controller
   if (keyboard.down("O")) orbit.enabled = !orbit.enabled;

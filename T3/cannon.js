@@ -2,7 +2,7 @@ import * as THREE from "../build/three.module.js";
 import { CSG } from "../libs/other/CSGMesh.js";
 
 // Importações do projeto
-import { scene, bullets, tanks, clockDelta } from './main.js'
+import { scene, bullets, tanks, clockDelta, audio } from './main.js'
 import { Bullet } from './bullet.js'
 import { angleBetweenObjects } from "./extra_lib.js"
 
@@ -219,6 +219,7 @@ export class Cannon {
 
     bullets.push(new Bullet(this));
     this.shotAvailable = false;
+    audio.playSound("shot", 0.2);
   }
 
   rotate(clockwise, smooth, angle) {

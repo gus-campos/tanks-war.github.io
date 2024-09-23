@@ -8,7 +8,8 @@ import { scene,
          clockDelta, 
          player, 
          mobileMode,
-         touchControls 
+         touchControls,
+         audio
 } from "./main.js"
 
 import { Bullet } from "./bullet.js";
@@ -443,6 +444,7 @@ export class Tank {
   shoot() {
 
     bullets.push(new Bullet(this, this.damageBoosted));
+    audio.playSound("shot", 0.2);
   }
 
   updateCollider() {
@@ -507,6 +509,7 @@ export class Tank {
         
         // Decrementar vida se fora do god mode, de acordo estado do boost de dano
         if (!this.godMode) this.life -= bullet.damageBoosted ? 2 : 1;
+        audio.playSound("bonk", (this.name == "P") ? 0.3 : 0.1);
         // Atualziar contador de dano
         this.cumulativeDamage++;
         // Desativar tiro
