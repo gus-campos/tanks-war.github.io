@@ -290,7 +290,7 @@ function reset(levelIndex) {
   zoom = 0;
 
   // Skybox
-  scene.background = new THREE.CubeTextureLoader().load(urls);
+  scene.background = skybox;
 
   // Arranjo do nível e direções de contorno
   let levelMatrix = levelMatrixes[levelIndex];
@@ -356,7 +356,7 @@ function reset(levelIndex) {
 export let scene, renderer, camera, material, light, orbit, mobileMode;
 scene = new THREE.Scene();                                   
 camera = initCamera();    
-renderer = new THREE.WebGLRenderer();         
+renderer = new THREE.WebGLRenderer();     
 
   // Configurando renderer e mapeamento de sombras
   document.getElementById("webgl-output").appendChild(renderer.domElement);
@@ -378,6 +378,7 @@ let format = ".jpg"
 prefixes.forEach(prefix => {
   urls.push(root + prefix + format)
 })
+let skybox = new THREE.CubeTextureLoader().load(urls);
 
 // Audio
 audio = new Audio();
