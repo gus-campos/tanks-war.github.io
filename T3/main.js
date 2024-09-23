@@ -387,14 +387,12 @@ let zoom, scroll = 0;
 
 // ============================================================================
 
-
-
-// ============================================================================
-
 // Joystick
 mobileMode = document.getElementById("main").getAttribute("data-mobile") == "true";
 touchControls = new TouchControls();
 if (!mobileMode) touchControls.deleteUI();
+
+// keyboard
 keyboard = new KeyboardState();
 
 // Tela de carregamento
@@ -403,22 +401,32 @@ let loadingScreen = new LoadingScreen();
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
 
-// ============================================================================
+// ======= CHECANDO ORITAÇÂO E SOCLICITANDO QUE ROTACIONE  ====================
 
-function checkOrientation() {
-  if (window.innerWidth < window.innerHeight) {
-    // In portrait mode, show the warning overlay
-    document.getElementById('rotate-warning').classList.add('active');
-  } else {
-    // In landscape mode, hide the warning overlay
-    document.getElementById('rotate-warning').classList.remove('active');
+if (mobileMode) {
+  
+  function checkOrientation() {
+    if (window.innerWidth < window.innerHeight) {
+      // In portrait mode, show the warning overlay
+      document.getElementById('rotate-warning').classList.add('active');
+    } else {
+      // In landscape mode, hide the warning overlay
+      document.getElementById('rotate-warning').classList.remove('active');
+    }
   }
-}
 
-// Run the check on page load and screen resize
-window.addEventListener('resize', checkOrientation);
-window.addEventListener('load', checkOrientation);
-checkOrientation();
+  function onOrientationChange() {
+    document.body.scrollLeft = 0;
+    document.body.scrollRight = 0; 
+  }
+
+  // Run the check on page load and screen resize
+  window.addEventListener('orientationchange', onOrientationChange);
+  window.addEventListener('resize', checkOrientation);
+  window.addEventListener('load', checkOrientation);
+  onOrientationChange();
+  checkOrientation();
+}
 
 // ============================================================================
 
