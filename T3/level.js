@@ -42,7 +42,7 @@ const PowerUpTypes = {
 }
 
 const powerUpHeight = 2.3;
-const powerUpTime = 4;
+const powerUpTime = 10;
 const powerUpDistance = 4;
 
 class PowerUp {
