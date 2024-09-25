@@ -37,11 +37,12 @@ class TouchControls {
     
     // Atributo joystick
     this.joystick = nipplejs.create({
-      zone: document.getElementById('joystickWrapper1'),
+      zone: document.getElementById('joystick'),
       mode: 'static',
-      position: { bottom: "100px", left: "100px" }
+      position: { bottom: "100px", left: "100px" },
+      color: "white"
     });
-
+    
     // Setting z-index
     this.joystick[0].el.style.zIndex = 0;
 
@@ -105,7 +106,7 @@ class TouchControls {
   deleteUI() {
 
     let elements = [
-      document.getElementById("joystickWrapper1"),
+      document.getElementById("joystick"),
       document.getElementById("full"),
       document.getElementById("som"),
       document.getElementById("A")
@@ -417,6 +418,11 @@ let loadingScreen = new LoadingScreen();
 
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
+
+// Sobrescrevendo modo noite
+if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+  document.body.classList.remove('dark-theme');
+}
 
 // ======= CHECANDO ORITAÇÂO E SOCLICITANDO QUE ROTACIONE  ====================
 
