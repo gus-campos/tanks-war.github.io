@@ -24,19 +24,21 @@ export class Block {
 
   updatePosition() {
 
+    /*
+    Calcula e faz o deslocamento de um bloco, caso seja móvel
+    */
+
     if (this.movable) {
 
       let newPosition = this.object.position.clone()
       
-      // Deslocamento
       let delta = this.speed * clockDelta;
       this.cumulativeDelta += Math.abs(delta);
 
-      // Delocando
       this.object.position.copy(newPosition.add(this.movingDirection.clone().multiplyScalar(delta)))
       this.collider = new THREE.Box3().setFromObject(this.object);
       
-      // Invertendo direção
+      // Inverter direção se delta se acumular o suficiente
       if (this.cumulativeDelta >= 4 * blockSize) {
         this.cumulativeDelta = 0;
         this.movingDirection.z *= -1;
@@ -48,17 +50,20 @@ export class Block {
 
   createGeometry(position, texture) { 
 
-    // Criando objeto
+    /*
+    Cria a geometria do bloco
+    */
+
     let material = new THREE.MeshLambertMaterial({ side: THREE.DoubleSide });
       material.map = texture;
+
     let blockGeometry = new THREE.BoxGeometry(blockSize, blockSize, blockSize);
     let block = new THREE.Mesh(blockGeometry, material);
       block.receiveShadow = true;
       block.castShadow = true;
-
-      // Definindo posição e adicionando na cena
       block.position.set(position.x, position.y, position.z);
-      scene.add(block);
+      
+    scene.add(block);
 
     return block;
   }
@@ -66,31 +71,22 @@ export class Block {
   dir(reference) {
 
     /*
-    Retorna a direção do bloco, e acordo com a posição passada da referência
+    Retorna a direção do bloco, de acordo com a posição passada da referência
     */
 
-    // Se for bloco de colisão horizontal
     if (this.type == "H") {
 
-      // Decidir se está do lado direito ou esquerdo
-      if (reference.x - this.object.position.x > 0)
-        return "R";
-      else
-        return "L";
+      return (reference.x - this.object.position.x > 0) ? "R" : "L";
     }
 
-    // Se for de reflexão múltipla, calcular ângulo usando a referência, 
-    // para descobrir em qual do cubo está sendo tocada
-    else if (this.type == "*" || this.type == "k" || this.type == "K" || this.type == "Z" || this.type == "Y" || this.type == "W") {
+    // Reflexão múltipla
+    else if (["*", "k", "K", "Z", "Y", "W"].includes(this.type)) {
 
-      // Se for bloco de canhão, considerar o bloco central como referência, do contrário, usar o próprio bloco
       let centralBlock = (this.type == "k" || this.type == "K") ? this.parent : this;
 
-      // Vetor horizontal e vetor bloco-tanque
       let vec1 = new THREE.Vector3(0,0,1);
       let vec2 = reference.clone().add(centralBlock.object.position.clone().multiplyScalar(-1));
       
-      // Ângulo entre eles
       let angle = signedAngle(vec1, vec2) * (180/Math.PI);
 
       // Decidindo direção baseado no ângulo encontrado
@@ -101,14 +97,14 @@ export class Block {
 
     }
 
-    // Se for bloco unidirecional, passar seu tipo, como sendo sua direção
+    // Se for unidirecional
     else return this.type
   }
 
   dirVec(reference) {
 
     /*
-    Retorna o vetor direção do bloco, de acordo com sua direção
+    Retorna o vetor direção do bloco, de acordo com sua direção.
     */
 
     switch (this.dir(reference)) {

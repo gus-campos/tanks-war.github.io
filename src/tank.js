@@ -1,14 +1,8 @@
 import * as THREE from "../build/three.module.js";
 
 // Importações do projeto
-import { scene, 
-         level, 
-         bullets, 
-         tanks, 
-         mobileMode,
-         touchControls,
-         audio,
-         clockDelta
+import { scene, level, bullets, tanks, mobileMode, 
+         touchControls, audio, clockDelta
 } from "./main.js"
 
 import { tankAI } from './tank_ai.js'
@@ -32,7 +26,6 @@ export class Tank {
 
   constructor(position, rotationAngle, colors, name) {
 
-    // Propriedades gerais
     this.life = 10;
     this.object = null;
     this.collider = null;
@@ -41,7 +34,6 @@ export class Tank {
     this.godMode = false;
     this.damageBoosted = false;
     
-    // Propriedades contantes
     this.name = name;
     this.mainColor = colors["Tank_Root"];
 
@@ -56,16 +48,9 @@ export class Tank {
     this.spawnLocation = level.getSpawns()[this.name]
     this.partner = null;
 
-    // Iniciando com timer aleatório, no range do follow
     this.timer = timeCriteria;
-
-    // Criando barra após definição da cor principal
     this.bar = new Bar(this);
-
-    // Recebendo objeto do tanque e do shooter
     [this.object, this.shooter] = this.createGeometry(position, rotationAngle, colors);
-    
-    // Inicializando colisor que será atualizado por outro método
     this.collider = new THREE.Box3();
   }
 
@@ -76,17 +61,18 @@ export class Tank {
 
   createGeometry(position, rotationAngle, colors) {
 
+    /*
+    Cria a geometria do tanque
+    */
+
     let model = tankModel.clone();
     position.y = 0;   
     model.position.copy(position);
     model.rotateY(rotationAngle/180 * Math.PI)
 
-    // Para receber objeto de tiro
     let shooter;
 
     model.traverse(function (child) {
-      
-      // Se for o cano do tanque, criar objeto de referência
       if (child.name == "Tank_Barrel") {
         shooter = new THREE.Object3D();
         shooter.position.copy(child.position);
@@ -94,13 +80,15 @@ export class Tank {
         child.parent.add(shooter);
       }
         
-      // Mudando a direção do tanque (canhão virado para +X)
-      if (child.parent == model) 
+      // Rotacionando de acordo
+      if (child.parent == model) {
         child.rotateZ(-Math.PI/2);
+      }
       
-      // Se tem material, definir sua cor de acordo com nome do pai
-      if (child.material)
+      // Definir material de acordo com o pai
+      if (child.material) {
         child.material = new THREE.MeshPhongMaterial({color:colors[child.parent.name]});
+      }
     });
     
     scene.add(model); 
@@ -108,48 +96,62 @@ export class Tank {
   } 
 
   rotate(clockwise, angle) {
+    /*
+    Rotacionando o tanque, suavizando movimento de acordo 
+    com o ângulo
+    */
 
+    // Suavização do movimento
     let rotatingSpeed;
-
-    // Se for movimento suave, quanto menor for o ângulo, menor será a velocidade de rotação
-    if ((angle != null) && (-angleCriteria < angle) && (angle < angleCriteria)) {
-      let scalar = Math.abs(angle)/(2*Math.PI);       // Normalizar ângulo e usar como escalar
-      rotatingSpeed = scalar * regularRotatingSpeed;
-    }
-
-    else {
+    
+    let isSmooth = (angle != null) && (angle > -angleCriteria) && (angle < angleCriteria)
+    
+    if (isSmooth)
+      rotatingSpeed = Math.abs(angle/2*Math.PI) * regularRotatingSpeed;
+    else
       rotatingSpeed = regularRotatingSpeed;
-    }
-
+    
     // Direção do movimento
-    if (clockwise) { this.object.rotateY(rotatingSpeed); }
-    else { this.object.rotateY(-rotatingSpeed); }
+    if (clockwise)
+      this.object.rotateY(rotatingSpeed);
+    else 
+      this.object.rotateY(-rotatingSpeed);
   }
 
   move(ahead=true, slow=false) {
 
+    /*
+    Move o tanque, para frente ou para trás, devagar ou rápido
+    de acordo com parâmetros
+    */
+
     let speed = slow ? 0.8 * regularSpeed : regularSpeed;
 
-    if (ahead) this.object.translateX( speed);
-    else this.object.translateX(-speed);
+    if (ahead) 
+      this.object.translateX( speed);
+    else 
+      this.object.translateX(-speed);
   }
 
   updateActions(keyboard) {
+
+    /*
+    Atualiza tanque de acordo com os controles do teclado
+    */
     
     let keyboardControls = () => {
 
-      // Rotação
-      // Translação
       if ((keyboard.pressed("A") || keyboard.pressed("left")))  this.rotate(true);
       if ((keyboard.pressed("D") || keyboard.pressed("right"))) this.rotate(false);
       if ((keyboard.pressed("W") || keyboard.pressed("up")))    this.move(true);
       if ((keyboard.pressed("S") || keyboard.pressed("down")))  this.move(false);
-      // Tiro 
       if (keyboard.down("space"))   this.shoot();
 
     }
 
     let touchScreenControls = () => {
+
+      /* Controles do touch */
 
       // -------------- Update movements --------------
 
@@ -167,8 +169,10 @@ export class Tank {
       if (joystickDir.length() != 0) {
 
         // Girar
-        if (angle > 0) this.rotate(true, angle*20);
-        else this.rotate(false, angle*20);
+        if (angle > 0) 
+          this.rotate(true, angle*20);
+        else 
+          this.rotate(false, angle*20);
 
         // Andar
         this.move();
@@ -184,23 +188,26 @@ export class Tank {
     // Controles do player
     if (this.name == "P") {
       
-      if (mobileMode)
+      if (mobileMode) {
         touchScreenControls();
-      else
+      } else {
         keyboardControls();
+      }
       
     }
 
     // Controles de IA
     else this.tankAI();
 
-    // Observando se tanquese moveu
     this.moved = this.lastPosition.distanceTo(this.object.position) > 0;
-    // Salvando última posição do tanque
     this.lastPosition = this.object.position.clone();
   }
 
   shoot() {
+
+    /*
+    Cria um tiro e o adiciona ao ambiente
+    */
 
     bullets.push(new Bullet(this, this.damageBoosted));
     audio.playSound("shot", 0.2);
@@ -220,12 +227,13 @@ export class Tank {
 
   updateEmission() {
 
-    // Quando estiver no god mode, ativar emissão
-    if (this.godMode){
+    /*
+    Atualiza a emissçao do tanque, para ilustrar o god mode
+    */
 
+    if (this.godMode){
       this.object.traverse( function(child) {
         if (child.material) {
-
           child.material.emissive.set("lightgreen");
           child.material.emissiveIntensity = 1;
         }
@@ -235,7 +243,6 @@ export class Tank {
       
       this.object.traverse( function(child) {
         if (child.material) {
-
           child.material.emissive.set("lightgreen");
           child.material.emissiveIntensity = 0;
         }
@@ -245,10 +252,12 @@ export class Tank {
 
   updateLife() {
 
-    // Atualiza emissão do god mode
+    /*
+    Atualiza vida de acordo com colisões do tanque
+    */
+
     this.updateEmission()
 
-    // Pra cada projétil
     bullets.forEach(bullet => {
 
       let pos1 = new THREE.Vector3();
@@ -259,56 +268,56 @@ export class Tank {
 
       let authorCondition;
       
-      // Se for o player, só não toma dano de si
-      if (this.name == "P") authorCondition = (bullet.author != "P");
-      else authorCondition = (bullet.author != "A" && bullet.author != "B" && bullet.author != "C");
+      // Regras de fogo amigo
+      if (this.name == "P") 
+        authorCondition = (bullet.author != "P");
+      else 
+        authorCondition = (bullet.author != "A" && bullet.author != "B" && bullet.author != "C");
 
-      // Se estiver ativo, não for de própria autoria, e tiver intersectando
-      if ((bullet.active) && (authorCondition) && (bullet.collider.intersectsBox(this.collider))) {
+      // Se ouver colisãs de tiro ativo, e não for fogo amigo
+      if (bullet.active && authorCondition && bullet.collider.intersectsBox(this.collider)) {
         
-        // Decrementar vida se fora do god mode, de acordo estado do boost de dano
-        if (!this.godMode) this.life -= bullet.damageBoosted ? 2 : 1;
+        if (!this.godMode) 
+          this.life -= bullet.damageBoosted ? 2 : 1;
+
         audio.playSound("bonk", (this.name == "P") ? 0.3 : 0.1);
-        // Atualziar contador de dano
+
         this.cumulativeDamage++;
-        // Desativar tiro
+
         bullet.active = false;
         bullet.object.visible = false;
         scene.remove(bullet.object);
       }
     })
 
-    // Atualizando última posição
     this.lastPosition2 = this.object.position.clone();
   } 
 
   updateCollisions() {
     
-    // Para cada bloco com o qual houve interseção
+    /*
+    Corrige posição do tanque de acordo com a colisão com blocos
+    */
+
+    // Para cada bloco intercedido 
     level.blocks.forEach(block => {
-      
       if (this.collider.intersectsBox(block.collider)) {
 
-        // Se for bloco móvel
+        // Adicionando arrasto causado pelo bloco móvel
         if (this.name == "P" && block.movable) {
 
-          // Se for direções horizontais, e tiver de frente pro bloco
           let dir = block.dir(this.object.position)
           if (dir == "L" || dir == "R") {
 
-            // Se tiver de frente pro bloco
             let tankZ = this.object.position.z;
             let blockZ = block.object.position.z;
             if (tankZ < (blockZ + blockSize/2) && tankZ > (blockZ - blockSize/2)) {
 
-              // Se não estiver no meio do bloco (preso ou lateral)
               let tankX = this.object.position.x;
               let blockX = block.object.position.x;
               if (Math.abs(tankX - blockX) > blockSize/2) {
 
-                // Congelando posições
                 this.object.position.copy(this.lastPosition2);
-                // Exceto na direção z, que acompanhará o z do bloco
                 this.object.position.z +=  block.speed * block.movingDirection.z * clockDelta;
               }
             }
@@ -317,7 +326,8 @@ export class Tank {
 
         let dir = block.dir(this.object.position);
         
-        // ====================== Limitando movimento em direção ao bloco ======================
+        // ====================== Limitando movimentação em relação aos blocos ======================
+
         if ((dir == "L") && (this.object.position.x - block.object.position.x < blockSize/2))
           this.object.position.x = block.object.position.x - blockSize - 0.01;
 
@@ -335,6 +345,10 @@ export class Tank {
   }
 
   selfDestruct() {
+
+    /*
+    Destrói o tanque
+    */
 
     tanks.splice(tanks.indexOf(this), 1);
     scene.remove(this.bar.background);

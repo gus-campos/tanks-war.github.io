@@ -1,8 +1,13 @@
+
+
+
 import * as THREE from "../build/three.module.js";
-import { OrbitControls } from "../build/jsm/controls/OrbitControls.js";
 import KeyboardState from "../libs/util/KeyboardState.js";
+import { OrbitControls } from "../build/jsm/controls/OrbitControls.js";
 import { initCamera, onWindowResize } from "../libs/util/util.js";
-import { Buttons } from "../libs/other/buttons.js";
+import { TouchControls } from "./touchControls.js";
+import { Audio } from "./audio.js";
+import { LoadingScreen } from "./loadingScreen.js";
 
 // Importações do projeto
 import { Level } from "./level.js";
@@ -11,11 +16,9 @@ import { Bullet } from "./bullet.js";
 import { Cannon } from "./cannon.js";
 
 // Importação de dados do jogo
-import { levelMatrixes, 
-  handMatrixes, 
-  lightsIntensities,
-  colors, 
-  initialRotationAngles 
+import { 
+  levelMatrixes, handMatrixes, lightsIntensities, 
+  colors, initialRotationAngles 
 } from './game_data.js';
 
 // Constantes
@@ -25,240 +28,11 @@ const aproxScale = 1.5;
 const cameraAxe = new THREE.Vector3(0, 1, 1)
 export const blockSize = 4;
 
-// ============================================================================
-
-class TouchControls {
-  constructor() {
-
-    // ============= JOYSTICK ==========================================
-
-    // Posição e direção do Joystick
-    this.joystickVector = new THREE.Vector2(0,0);
-    
-    // Atributo joystick
-    this.joystick = nipplejs.create({
-      zone: document.getElementById('joystick'),
-      mode: 'static',
-      position: { bottom: "100px", left: "100px" },
-      color: "white"
-    });
-    
-    // Setting z-index
-    this.joystick[0].el.style.zIndex = 0;
-
-    // Attactching listeners
-    this.joystick.on('move', function (evt, data) {
-      touchControls.joystickVector = new THREE.Vector3(-data.vector.x, 0, data.vector.y).normalize()
-    })
-  
-    this.joystick.on('end', function (evt) {
-      touchControls.joystickVector = new THREE.Vector2(0,0);
-    })
-
-    
-    // ============= BOTÕES ============================================
-    
-    this.shootPressed = false;
-    this.shootPressedLastFrame = false;
-    this.shootDown = false;
-
-    this.muteTimer = 0;
-    
-    // Listerners
-    function onButtonDown(event) {
-
-      switch(event.target.id)
-      {
-        case "A":
-          touchControls.shootPressed = true;
-          break;
-        case "som":
-          if (touchControls.muteTimer < 0) {
-            audio.mute = !audio.mute;
-            touchControls.muteTimer = 0.25;
-          }
-          break;    
-        case "full":
-          touchControls.buttons.setFullScreen();
-        break;    
-      }
-    }
-    
-    function onButtonUp(event) {
-      if (event.target.id == "A") {
-        touchControls.shootPressed = false;
-      }
-    }
-    
-    // Atributo botões
-    this.buttons = new Buttons(onButtonDown, onButtonUp);
-  }
-
-  update() {
-
-    this.shootDown = (!this.shootPressedLastFrame && this.shootPressed)
-    this.shootPressedLastFrame = this.shootPressed;
-
-    // Decrementando timer do mute
-    this.muteTimer -= clockDelta;
-  }
-
-  deleteUI() {
-
-    let elements = [
-      document.getElementById("joystick"),
-      document.getElementById("full"),
-      document.getElementById("som"),
-      document.getElementById("A")
-    ];
-
-    elements.forEach(element => {element.remove()});
-
-  }
-}
-
-class LoadingScreen {
-  constructor() {
-
-    this.start = true;
-    this.active = true;
-    this.pause = true;
-
-    this.screen = document.getElementById( 'loading-screen' );
-
-    this.button  = document.getElementById("myBtn")
-      this.button.style.backgroundColor = 'darkgreen';
-      this.button.innerHTML = 'START';
-      this.button.addEventListener("click", LoadingScreen.onButtonPressed);
-
-    this.status = document.getElementById("status");
-      this.status.innerHTML = 'TANKS WAR';
-  }
-
-  fadeOut() {
-    
-    this.active = false;
-    this.pause = false;
-
-    this.button.style.opacity = 0;
-    this.screen.transition = 0;
-    this.screen.classList.remove('fade-in');
-    this.screen.classList.add( 'fade-out' );
-  }
-
-  fadeIn() {
-
-    this.active = true;
-    this.pause = true;
-
-    this.button.style.opacity = 1;
-    this.screen.transition = 0;
-    this.screen.classList.remove('fade-out');
-    this.screen.classList.add( 'fade-in' );
-  }
-
-  gameOver(win=false) {
-
-    this.status.innerHTML = win ? 'VICTORY' : 'GAME OVER';
-    this.button.innerHTML = win ? 'START OVER' : 'RETRY';
-
-    this.fadeIn();
-  }
-
-  static onButtonPressed() {
-    
-    if (loadingScreen.active) {
-      
-      loadingScreen.fadeOut();
-      
-      // (Re)começar jogo
-      reset(1);
-
-      // Só da primeira vez
-      if (loadingScreen.start) { 
-        // Se mobile, full screen
-        if (mobileMode) touchControls.buttons.setFullScreen();  
-        // Render 
-        render();
-        loadingScreen.start = false;
-      }
-    }
-  }
-}
-
-class Audio {
-  constructor() {
-
-    this.mute = false;
-    this.previousMute = false;
-    this.listener = new THREE.AudioListener();
-    this.audioLoader = new THREE.AudioLoader();
-    this.sounds = {
-
-      "shot" : 'assets/audio/pewPew.wav',
-      "bonk" : 'assets/audio/boom.mp3',
-      "ost"  : 'assets/audio/astronaut.wav',
-      "gate" : 'assets/audio/gate.mp3'
-    } 
-
-    this.ostAudio = new THREE.Audio(this.listener);
-    this.gate = new THREE.Audio(this.listener);
-
-    this.audioLoader.load(this.sounds["ost"], function(buffer) {
-      audio.ostAudio.setBuffer(buffer);
-      audio.ostAudio.setLoop(true);
-      audio.ostAudio.setVolume(3);
-      audio.ostAudio.play();
-    });
-  }
-
-  playSound(soundName, volume) {
-
-    if (!this.mute) {
-
-      const sound = new THREE.Audio(this.listener);
-      this.audioLoader.load(this.sounds[soundName], function(buffer) {
-        sound.setBuffer(buffer);
-        sound.setLoop(false);
-        sound.setVolume(volume);
-        sound.play();
-      });
-    }
-  }
-
-  updateOst() {
-
-    if (this.mute)
-      audio.ostAudio.stop();
-
-    if (!this.mute && this.previousMute)
-      audio.ostAudio.play();
-
-    this.previousMute = this.mute;
-  }
-}
 
 // ============================================================================
 
 function updateCamera(zoomMultiplier) {
 
-  /* 
-  // ----- Este trecho encontra o centro de massa dos tanques -----
-  // Encontrando centro de massa dos tanques
-  tanks.forEach(tank => {
-    
-    lookAt = lookAt.clone().add(tank.object.position);
-  });
-  lookAt = lookAt.multiplyScalar(1/tanks.length);
-
-  // Encontranda distância média da câmera até o lookAt
-  tanks.forEach(tank => {
-    
-    dist += lookAt.clone().distanceTo(tank.object.position);
-  });
-  dist /= tanks.length;
-  */
- 
   // Encontrando referência
   let playerPosition;
   tanks.forEach(tank => { if (tank.name == "P") playerPosition = tank.object.position; })
@@ -268,22 +42,19 @@ function updateCamera(zoomMultiplier) {
   let widthDistScaler = 1920/window.innerWidth;
   let heightDistScaler = 1*window.innerHeight/1080;
 
-  // Aplicando zoom
-  //zoomMultiplier = 1/zoomMultiplier;
-
   // Escala total de distância
   let totalDistScale = minDist+zoomMultiplier+aproxScale*widthDistScaler*heightDistScaler;
 
   // Definir que câmera olhará pro centro de massa dos tanques
   camera.lookAt(playerPosition);
-  // Definir distância da câmera de acordo com o escala total de distância calculada
   camera.position.copy(cameraAxe.clone().multiplyScalar(totalDistScale).add(playerPosition))
 }
 
-function reset(levelIndex) {
+export function reset(levelIndex) {
 
   // Verificando god mode anterior 
   let godMode = false;
+
   if (player)
     godMode = player.godMode;
 
@@ -292,7 +63,6 @@ function reset(levelIndex) {
 
   // Resetando teclado
   KeyboardState.status = {}
-  
   
   // Resetando variáveis
   clock = new THREE.Clock();
@@ -309,7 +79,6 @@ function reset(levelIndex) {
   let levelMatrix = levelMatrixes[levelIndex];
   let handMatrix = handMatrixes[levelIndex];
 
-  // Intensidade das luzes
   let lightsIntensity = lightsIntensities[levelIndex];
 
   // Criando nível
@@ -342,7 +111,7 @@ function reset(levelIndex) {
   // Criando luzes ambientes e direcional
   Level.createBasicLights(lightsIntensity[0], lightsIntensity[1]);
 
-  // Recebendo spwans dos tanques
+  // Recebendo spawns dos tanques
   let spawns = level.getSpawns();
 
   // Criando tanques, de acordo com spawns e adicionando ao array
@@ -374,8 +143,6 @@ export let scene, renderer, camera, material, light, orbit, mobileMode;
 scene = new THREE.Scene();                                   
 camera = initCamera();    
 renderer = new THREE.WebGLRenderer();     
-
-  // Configurando renderer e mapeamento de sombras
   document.getElementById("webgl-output").appendChild(renderer.domElement);
   renderer.setSize(window.innerWidth, window.innerHeight);
   renderer.shadowMap.enabled = true;
@@ -398,7 +165,8 @@ prefixes.forEach(prefix => {
 let skybox = new THREE.CubeTextureLoader().load(urls);
 
 // Audio
-audio = new Audio();
+let audioListener = new THREE.AudioListener();
+audio = new Audio(audioListener);
 
 // Zoom
 let zoom, scroll = 0;
@@ -414,7 +182,7 @@ if (!mobileMode) touchControls.deleteUI();
 keyboard = new KeyboardState();
 
 // Tela de carregamento
-let loadingScreen = new LoadingScreen();
+export let loadingScreen = new LoadingScreen();
 
 // Habilitando redimensionamento
 window.addEventListener('resize', function () { onWindowResize(camera, renderer) }, false);
@@ -461,7 +229,7 @@ document.addEventListener( 'wheel', (event) => {
 
 // ============================================================================
 
-function render() {
+export function render() {
 
   // Atualizando posição dos blocos
   level.updateBlocksPosition();
@@ -543,7 +311,7 @@ function render() {
     Bullet.updateReflections();
 
     // Atualia animação do powerUp
-    level.updatePowerUp(player);
+    level.updateLevelPowerUp(player);
 
   }
 

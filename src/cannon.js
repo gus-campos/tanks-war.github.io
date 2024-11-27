@@ -29,9 +29,11 @@ export class Cannon {
 
   createGeometry(position) {
 
-    // Material
+    /*
+    Cria a geometria do canhão, usando método de CSG
+    */
+
     let material = new THREE.MeshPhongMaterial();
-      
       material.color.set("rgb(105,105,105)");
       material.side = THREE.DoubleSide;
       material.specular.set("gray");
@@ -76,7 +78,7 @@ export class Cannon {
     fillingCylinder.updateMatrix();
     fillingCuttingBox.updateMatrix();
     
-    // Create a bsp tree from each of the meshes
+    // Criando árvores bsp
     a = CSG.fromMesh(fillingCylinder);
     b = CSG.fromMesh(fillingCuttingBox);
     
@@ -92,7 +94,7 @@ export class Cannon {
     torusSection.updateMatrix();
     filling.updateMatrix();
 
-    // Create a bsp tree from each of the meshes
+    // Criando árvores bsp
     a = CSG.fromMesh(torusSection);
     b = CSG.fromMesh(filling);
 
@@ -121,7 +123,7 @@ export class Cannon {
     baseA.updateMatrix();
     baseB.updateMatrix();
 
-    // Create a bsp tree from each of the meshes
+    // Criando árvores bsp
     a = CSG.fromMesh(baseA);
     b = CSG.fromMesh(baseB);
 
@@ -158,7 +160,7 @@ export class Cannon {
     detailA.updateMatrix();
     detailB.updateMatrix();
 
-    // Create a bsp tree from each of the meshes
+    // Criando árvores bsp
     a = CSG.fromMesh(detailA);
     b = CSG.fromMesh(detailB);
     let c = CSG.fromMesh(barrelMain);
@@ -217,64 +219,65 @@ export class Cannon {
 
   shoot() {
 
+    /*
+    Cria tiro e adiciona ao ambiente
+    */
+
     bullets.push(new Bullet(this));
     this.shotAvailable = false;
     audio.playSound("shot", 0.2);
   }
 
-  rotate(clockwise, smooth, angle) {
+  rotate(clockwise, isSmooth, angle) {
+
+    /*
+    Rotaciona o canhão, seguindo uma suavização da rotação de acordo com o ângulo
+    */
 
     let rotatingSpeed;
   
-    // Se for movimento suave, quanto menor for o ângulo, menor será a velocidade de rotação
-    if (smooth) {
-      let scalar = Math.abs(angle)/(2*Math.PI);     // Normalizar ângulo e usar como escalar
-      rotatingSpeed = scalar * regularRotatingSpeed;
-    }
-  
-    else {
+    // Suavização do movimento: quanto menor o ângulo, menor a velocidade
+    if (isSmooth)
+      rotatingSpeed = Math.abs(angle/(2*Math.PI)) * regularRotatingSpeed;
+    else 
       rotatingSpeed = regularRotatingSpeed;
-    }
   
     // Direção do movimento
-    if (clockwise) this.object.rotateY(rotatingSpeed)
-    else this.object.rotateY(-rotatingSpeed)
-    }
+    if (clockwise) 
+      this.object.rotateY(rotatingSpeed)
+    else 
+      this.object.rotateY(-rotatingSpeed)
+  }
 
 
   update() {
 
     // Encontrando o tanque mais próximo
-    let closestTank = tanks[0];
-    let closestDistance = tanks[0].object.position.distanceTo(this.object.position)
+    let closestTank;
+    let closestDistance = Number.POSITIVE_INFINITY;
 
-    
-    for(let i=1; i<tanks.length; i++) {
+    for(let i=0; i<tanks.length; i++) {
       
       let thisTank = tanks[i]
       let thisDistance = tanks[i].object.position.distanceTo(this.object.position);
 
       if (thisDistance < closestDistance) {
-
         closestTank = thisTank;
         closestDistance = thisDistance;
       }
     }
 
-    // Vetores posição
     let shooterPosition = new THREE.Vector3();
     this.shooter.getWorldPosition(shooterPosition);
     
-    // Ângulo entre canhão e tanque alvo
     let angle = angleBetweenObjects(this.shooter, this.object, closestTank.object)
+    let isSmooth = (-angleCriteria < angle && angle < angleCriteria)
 
-    // Movimento smooth se tiver perto o suficiente
-    let smooth = (-angleCriteria < angle && angle < angleCriteria)
+    if (angle > 0) 
+      this.rotate(true, isSmooth, angle);
+    else 
+      this.rotate(false, isSmooth, angle);
 
-    if (angle > 0) this.rotate(true, smooth, angle);
-    else this.rotate(false, smooth, angle);
-
-    // Atualizando contagem de tempo
     this.timeSinceLastShot += clockDelta;
 
     // Na cadência adequada, atirar

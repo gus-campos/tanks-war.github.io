@@ -1,3 +1,8 @@
+
+/*
+Dados descrevendo as cinfigurações do jogo e os níveis
+*/
+
 // Cores
 export const colors = {
 
@@ -33,7 +38,7 @@ export const initialRotationAngles = {
   "3" : { "P" : -90, "A" : 180, "B" : 90, "C" : 90 }
 };
 
-export let lightsIntensities = {
+export const lightsIntensities = {
 
   "1" : [1, 5],
   "2" : [0.15, 0.2],

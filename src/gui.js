@@ -7,14 +7,12 @@ const barHeight = 0.5;
 export class Bar {
   constructor(tank, offset) {
 
-    // Atributos gerais
     this.rate;
     this.offset = offset;
     this.color = tank.mainColor;
     this.id;
     this.filling;
     
-    // Objetos
     this.tank = tank;
     this.background = this.createBackground();
     this.filling = this.createFilling(0.3);
@@ -22,13 +20,15 @@ export class Bar {
 
   createBackground() {
 
-    // Criando geometria
+    /*
+    Cria geometria do background e adiciona a cena
+    */
+
     var planeGeometry = new THREE.PlaneGeometry(barHeight+0.3, barWidth+0.3, 40, 40);
     var planeMaterial = new THREE.MeshBasicMaterial({ color: "darkgrey", side: THREE.DoubleSide });
     var plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.receiveShadow = false;
 
-    // Adicionando à cena
     scene.add(plane);
 
     return plane;
@@ -36,19 +36,19 @@ export class Bar {
 
   createFilling(rate) {
 
-    // Criando geometria
+    /*
+    Cria geometria do preenchimento e adiciona a cena
+    */
+
     var planeGeometry = new THREE.PlaneGeometry(barHeight, rate*barWidth, 40, 40);
     var planeMaterial = new THREE.MeshBasicMaterial({ color: this.color });
     var plane = new THREE.Mesh(planeGeometry, planeMaterial);
     plane.receiveShadow = false;
 
-    // Adicionando ao background
     this.background.add(plane);
     
-    // Posicionando acima do background
+    // Posicionando de forma que tenha a devida aparência
     plane.position.z += 0.01;
-    
-    // Posicionando de forma que o início das barras coincida 
     plane.position.y -=  0.5*barWidth - rate*barWidth/2;
 
     return plane;
@@ -56,22 +56,26 @@ export class Bar {
 
   update() {
 
-    // Copiando posição do tanque
+    /*
+    Atualiza a posição e preenchimento dos elementos
+    */
+
+    // Posição
     this.background.position.copy(this.tank.object.position)
     this.background.position.y = 7;
 
-    // Copiando rotação da câmera
+    // Rotação (olhando para a câmera)
     this.background.rotation.x = camera.rotation.x;
     this.background.rotation.y = -camera.rotation.y;
     this.background.rotation.z = -Math.PI/2;
 
-    // Limitando e atualizando enchimento
-    let rate = this.tank.life/10
-    rate = (rate<0) ? 0 : (rate>1 ? 1:rate);
+    // Limitando o valor do preenchimento
+    let rate = this.tank.life/10;
+    rate = (rate < 0) ? 0 : rate;
+    rate = (rate > 1) ? 1 : rate;
 
-    // Removendo filling anterior
+    // Substituindo filling
     this.background.remove(this.filling);
-    // Criando um novo com razão correta
     this.filling = this.createFilling(rate);
   } 
 }
