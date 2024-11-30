@@ -102,12 +102,11 @@ export class Tank {
     */
 
     // Suavização do movimento
+    let isSmooth = (angle != null) && (angle > -angleCriteria) && (angle < angleCriteria)
     let rotatingSpeed;
     
-    let isSmooth = (angle != null) && (angle > -angleCriteria) && (angle < angleCriteria)
-    
     if (isSmooth)
-      rotatingSpeed = Math.abs(angle/2*Math.PI) * regularRotatingSpeed;
+      rotatingSpeed = Math.abs(angle/ Math.PI) * regularRotatingSpeed;
     else
       rotatingSpeed = regularRotatingSpeed;
     
