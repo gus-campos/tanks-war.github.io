@@ -1,6 +1,7 @@
 import * as THREE from "../build/three.module.js";
 import { Buttons } from "../libs/other/buttons.js";
 import { clockDelta } from "./main.js";
+import { touchControls } from "./main.js";
 
 export class TouchControls {
   constructor() {
