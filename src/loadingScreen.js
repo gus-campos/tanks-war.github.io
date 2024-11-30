@@ -2,6 +2,7 @@ import { loadingScreen } from "./main.js";
 import { reset } from "./main.js";
 import { mobileMode } from "./main.js";
 import { render } from "./main.js";
+import { touchControls } from "./main.js";
 
 export class LoadingScreen {
   constructor() {
